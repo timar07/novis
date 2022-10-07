@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "lexer.h": "c",
+        "debug_macros.h": "c",
+        "io.h": "c",
+        "stdio.h": "c",
+        "string.h": "c",
+        "stddef.h": "c",
+        "stdarg.h": "c",
+        "stdlib.h": "c"
+    }
+}
