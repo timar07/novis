@@ -52,7 +52,6 @@ get_raw(novis_lexer_t *self)
 
     if (!is_at_end(self)) {
         c = self->src->raw[self->end++];
-        self->end++;
         return c;
     }
 
@@ -130,7 +129,12 @@ create_token(novis_lexer_t *self, novis_toktype_t toktype)
     novis_token_t *token = novis_alloc(sizeof(novis_token_t));
     token->toktype = toktype;
     memcpy(&token->ls, self, sizeof(novis_lexer_t)); // copy lexical state
-    token->lexeme = get_substr(self, token->ls.start, token->ls.end); // copy lexeme
+
+    if (token->toktype != TOKEN_EOF) {
+        token->lexeme = get_substr(self, token->ls.start, token->ls.end);
+    } else {
+        token->lexeme = "<EOF>";
+    }
 
 #ifdef NV_DEBUG_LEXER
     _novis_token_dump(token);
@@ -181,6 +185,22 @@ number(novis_lexer_t *self)
 }
 
 static novis_token_t *
+string(novis_lexer_t *self)
+{
+    int c = get_raw(self);
+
+    while (!is_at_end(self) && c != '"')
+        c = get_raw(self);
+
+    if (c == '\n') { // we hit newline but there wasn't terminator?
+        lexical_error(self, "unterminated string");
+        return create_token(self, TOKEN_ERROR);
+    }
+
+    return create_token(self, TOKEN_STRING);
+}
+
+static novis_token_t *
 get_token(novis_lexer_t *self)
 {
     int c;
@@ -189,17 +209,16 @@ get_token(novis_lexer_t *self)
     c = get_raw(self);
 
     switch (c) {
-        // ignore meaningless
-        case ' ': case '\t': case '\n':
-            return get_token(self);
         // End-of-file
         case EOF:
             return create_token(self, TOKEN_EOF);
+        // ignore meaningless
+        case ' ': case '\t': case '\n':
+        case '\v': case '\f': case '\r':
+            return get_token(self);
         // One character tokens
         case '+':
             return create_token(self, TOKEN_PLUS);
-        case '-':
-            return create_token(self, TOKEN_MINUS);
         case '*':
             return create_token(self, TOKEN_STAR);
         case '/':
@@ -208,8 +227,19 @@ get_token(novis_lexer_t *self)
             return create_token(self, TOKEN_DOT);
         case ',':
             return create_token(self, TOKEN_COMMA);
+        case '"':
+            return string(self);
         // One or two character long
+        case '-': {
+            if (match(self, '>'))
+                return TOKEN_ARROW_RIGHT;
+
+            return create_token(self, TOKEN_MINUS);
+        }
         case '<': {
+            if (match(self, '-'))
+                return create_token(self, TOKEN_ARROW_LEFT);
+
             if (match(self, '='))
                 return create_token(self, TOKEN_LESS_EQUAL);
 
