@@ -200,8 +200,8 @@ string(novis_lexer_t *self)
     return create_token(self, TOKEN_STRING);
 }
 
-static novis_token_t *
-get_token(novis_lexer_t *self)
+novis_token_t *
+novis_lex(novis_lexer_t *self)
 {
     int c;
 
@@ -215,8 +215,12 @@ get_token(novis_lexer_t *self)
         // ignore meaningless
         case ' ': case '\t': case '\n':
         case '\v': case '\f': case '\r':
-            return get_token(self);
+            return novis_lex(self);
         // One character tokens
+        case '(':
+            return create_token(self, TOKEN_LPAREN);
+        case ')':
+            return create_token(self, TOKEN_RPAREN);
         case '+':
             return create_token(self, TOKEN_PLUS);
         case '*':
@@ -232,7 +236,7 @@ get_token(novis_lexer_t *self)
         // One or two character long
         case '-': {
             if (match(self, '>'))
-                return TOKEN_ARROW_RIGHT;
+                return create_token(self, TOKEN_ARROW_RIGHT);
 
             return create_token(self, TOKEN_MINUS);
         }
@@ -282,18 +286,12 @@ get_token(novis_lexer_t *self)
     return create_token(self, TOKEN_ERROR);
 }
 
-novis_token_t *
-novis_lex(novis_input_t *src)
+void
+novis_init_lexer(novis_lexer_t *lexer, novis_input_t *src)
 {
-    novis_lexer_t self = {
-        .current = 0,
-        .start = 0,
-        .end = 0,
-        .line = 0,
-        .src = src
-    };
-
-    get_token(&self);
-    get_token(&self);
-    return NULL;
+    lexer->current = 0;
+    lexer->start = 0;
+    lexer->end = 0;
+    lexer->line = 0;
+    lexer->src = src;
 }

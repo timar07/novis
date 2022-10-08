@@ -15,6 +15,8 @@ typedef enum {
     TOKEN_LESS,
     TOKEN_GREATER,
     TOKEN_EQUAL,
+    TOKEN_LPAREN,
+    TOKEN_RPAREN,
     // Two character long
     TOKEN_ARROW_LEFT,
     TOKEN_ARROW_RIGHT,
@@ -45,6 +47,8 @@ static const char * _novis_toktypes_strings[] =  {
     "LESS",
     "GREATER",
     "EQUAL",
+    "LPAREN",
+    "RPAREN",
     "ARROW_LEFT",
     "ARROW_RIGHT",
     "EQUAL_EQUAL",
@@ -76,6 +80,10 @@ typedef struct {
     const char     *lexeme;  // lexeme (substring from source file)
 } novis_token_t;
 
-novis_token_t *novis_lex(novis_input_t *src);
+void
+novis_init_lexer(novis_lexer_t *lexer, novis_input_t *src);
+
+novis_token_t *
+novis_lex(novis_lexer_t *self);
 
 #endif

@@ -4,6 +4,13 @@
 
 int main(int argc, char *argv[])
 {
-    novis_lex(novis_read(argv[1]));
+    novis_lexer_t lexer;
+    novis_init_lexer(&lexer, novis_read(argv[1]));
+
+    novis_token_t *token = novis_lex(&lexer);
+
+    while (token->toktype != TOKEN_EOF)
+        token = novis_lex(&lexer);
+
     return 0;
 }
