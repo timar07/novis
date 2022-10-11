@@ -6,7 +6,8 @@ DBGFLAGS = -Wall -I./include/ -O0 -g
 EXEC = novis
 
 SRCMODULES = core/errors.c core/io.c core/memory.c \
-			 compiler/lexer.c
+			 compiler/lexer.c compiler/parser.c \
+			 vm/disassembly.c vm/run.c
 
 OBJMODULES = $(SRCMODULES:.c=.o)
 

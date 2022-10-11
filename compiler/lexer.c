@@ -31,14 +31,14 @@ is_digit(int c)
 
 // Return is lexer at the end or not
 static bool
-is_at_end(novis_lexer_t *self)
+is_at_end(NovisLexer *self)
 {
     return self->end >= self->src->len;
 }
 
 // Return current character
 static int
-current(novis_lexer_t *self)
+current(NovisLexer *self)
 {
     return self->src->raw[self->end];
 }
@@ -46,7 +46,7 @@ current(novis_lexer_t *self)
 // Return current character
 // and increase self->end
 static int
-get_raw(novis_lexer_t *self)
+get_raw(NovisLexer *self)
 {
     int c;
 
@@ -61,7 +61,7 @@ get_raw(novis_lexer_t *self)
 // Check if current character
 // matches 'c'
 static bool
-match(novis_lexer_t *self, int c)
+match(NovisLexer *self, int c)
 {
     if (current(self) == c) {
         get_raw(self);
@@ -74,7 +74,7 @@ match(novis_lexer_t *self, int c)
 // Check if there is a word
 // in current position
 static bool
-match_word(novis_lexer_t *self, const char *word)
+match_word(NovisLexer *self, const char *word)
 {
     size_t len = strlen(word);
     bool is_match = memcmp(&self->src->raw[self->end], word, len) == 0;
@@ -89,18 +89,18 @@ match_word(novis_lexer_t *self, const char *word)
 
 #ifdef NV_DEBUG_LEXER
 const char *
-_novis_get_toktype_string(novis_toktype_t toktype)
+_novis_get_tag_string(NovisTokenTag tag)
 {
-    return _novis_toktypes_strings[toktype];
+    return _novis_tags_strings[tag];
 }
 
 void
-_novis_token_dump(novis_token_t *token)
+_novis_token_dump(NovisToken *token)
 {
     enum {  DEBUG_INDENT = 4 };
 
     printf("Token {\n");
-    printf("%*stype   = %s;\n", DEBUG_INDENT, "", _novis_get_toktype_string(token->toktype));
+    printf("%*stype   = %s;\n", DEBUG_INDENT, "", _novis_get_tag_string(token->tag));
     printf("%*slexeme = %s;\n", DEBUG_INDENT, "", token->lexeme);
     printf("%*sline   = %lu;\n", DEBUG_INDENT, "", token->ls.line);
     printf("%*sstart  = %lu;\n", DEBUG_INDENT, "", token->ls.start);
@@ -111,7 +111,7 @@ _novis_token_dump(novis_token_t *token)
 
 // Return substring from a current file
 static char *
-get_substr(novis_lexer_t *self, size_t start, size_t end)
+get_substr(NovisLexer *self, size_t start, size_t end)
 {
     size_t strsz = sizeof(char)*end-start+1;
     char *substr = novis_alloc(strsz);
@@ -123,21 +123,21 @@ get_substr(novis_lexer_t *self, size_t start, size_t end)
 }
 
 // Create token
-static novis_token_t *
-create_token(novis_lexer_t *self, novis_toktype_t toktype)
+static NovisToken
+create_token(NovisLexer *self, NovisTokenTag tag)
 {
-    novis_token_t *token = novis_alloc(sizeof(novis_token_t));
-    token->toktype = toktype;
-    memcpy(&token->ls, self, sizeof(novis_lexer_t)); // copy lexical state
+    NovisToken token;
+    token.tag = tag;
+    memcpy(&token.ls, self, sizeof(NovisLexer)); // copy lexical state
 
-    if (token->toktype != TOKEN_EOF) {
-        token->lexeme = get_substr(self, token->ls.start, token->ls.end);
+    if (token.tag != TOKEN_EOF) {
+        token.lexeme = get_substr(self, token.ls.start, token.ls.end);
     } else {
-        token->lexeme = "<EOF>";
+        token.lexeme = "<EOF>";
     }
 
 #ifdef NV_DEBUG_LEXER
-    _novis_token_dump(token);
+    _novis_token_dump(&token);
 #endif
 
     return token;
@@ -145,7 +145,7 @@ create_token(novis_lexer_t *self, novis_toktype_t toktype)
 
 // * - Errors -
 static void
-lexical_error(novis_lexer_t *self, char *format, ...)
+lexical_error(NovisLexer *self, char *format, ...)
 {
     char buffer[1024];
     va_list arg;
@@ -166,8 +166,8 @@ lexical_error(novis_lexer_t *self, char *format, ...)
 
 // * - Lexing -
 
-static novis_token_t *
-identifier(novis_lexer_t *self)
+static NovisToken
+identifier(NovisLexer *self)
 {
     while (is_identifier(current(self)))
         get_raw(self);
@@ -175,8 +175,8 @@ identifier(novis_lexer_t *self)
     return create_token(self, TOKEN_IDENTIFIER);
 }
 
-static novis_token_t *
-number(novis_lexer_t *self)
+static NovisToken
+number(NovisLexer *self)
 {
     while (is_digit(current(self)))
         get_raw(self);
@@ -184,8 +184,8 @@ number(novis_lexer_t *self)
     return create_token(self, TOKEN_NUMBER);
 }
 
-static novis_token_t *
-string(novis_lexer_t *self)
+static NovisToken
+string(NovisLexer *self)
 {
     int c = get_raw(self);
 
@@ -200,8 +200,8 @@ string(novis_lexer_t *self)
     return create_token(self, TOKEN_STRING);
 }
 
-novis_token_t *
-novis_lex(novis_lexer_t *self)
+NovisToken
+novis_lex(NovisLexer *self)
 {
     int c;
 
@@ -287,7 +287,7 @@ novis_lex(novis_lexer_t *self)
 }
 
 void
-novis_init_lexer(novis_lexer_t *lexer, novis_input_t *src)
+novis_init_lexer(NovisLexer *lexer, NovisInput *src)
 {
     lexer->current = 0;
     lexer->start = 0;

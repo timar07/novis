@@ -34,10 +34,10 @@ typedef enum {
     TOKEN_IDENTIFIER,
     TOKEN_ERROR,
     TOKEN_EOF
-} novis_toktype_t;
+} NovisTokenTag;
 
 #ifdef NV_DEBUG_LEXER
-static const char * _novis_toktypes_strings[] =  {
+static const char * _novis_tags_strings[] =  {
     "PLUS",
     "MINUS",
     "STAR",
@@ -64,26 +64,29 @@ static const char * _novis_toktypes_strings[] =  {
     "ERROR",
     "<EOF>"
 };
+
+const char *
+_novis_get_tag_string(NovisTokenTag tag);
 #endif
 
 typedef struct {
-    size_t current; // current lexing symbol
-    size_t start;   // start of the current token
-    size_t end;     // end of the current token
-    size_t line;    // current line
-    novis_input_t *src;
-} novis_lexer_t;
+    size_t      current; // current lexing symbol
+    size_t      start;   // start of the current token
+    size_t      end;     // end of the current token
+    size_t      line;    // current line
+    NovisInput *src;     // lexer source string
+} NovisLexer;
 
 typedef struct {
-    novis_toktype_t toktype; // token type
-    novis_lexer_t   ls;      // lexical state
-    const char     *lexeme;  // lexeme (substring from source file)
-} novis_token_t;
+    NovisTokenTag tag;     // token type
+    NovisLexer    ls;      // lexical state
+    const char    *lexeme;  // lexeme (substring from source file)
+} NovisToken;
 
 void
-novis_init_lexer(novis_lexer_t *lexer, novis_input_t *src);
+novis_init_lexer(NovisLexer *lexer, NovisInput *src);
 
-novis_token_t *
-novis_lex(novis_lexer_t *self);
+NovisToken
+novis_lex(NovisLexer *self);
 
 #endif

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdio.h>
 
-static novis_input_t *src; /* source file */
+static NovisInput *src; /* source file */
 
 static size_t get_file_len(FILE *f)
 {
@@ -19,12 +19,12 @@ set_input_name(const char *name)
 	strcpy(src->name, name);
 }
 
-novis_input_t *
+NovisInput *
 novis_read(const char *fname)
 {
 	FILE *f;
 	size_t flen;
-	src = novis_alloc(sizeof(novis_input_t));
+	src = novis_alloc(sizeof(NovisInput));
 
 	if ((f = fopen(fname, "r")) == NULL) {
 		fprintf(stderr, "cannot open file: %s\n", fname);

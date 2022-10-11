@@ -7,6 +7,12 @@
         "string.h": "c",
         "stddef.h": "c",
         "stdarg.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "parser.h": "c",
+        "stdbool.h": "c",
+        "memory.h": "c",
+        "vm_api.h": "c",
+        "stdint.h": "c",
+        "inttypes.h": "c"
     }
 }
