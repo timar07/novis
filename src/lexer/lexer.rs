@@ -56,6 +56,8 @@ impl Lexer {
                 ' ' | '\n' => return self.lex_token(),
                 '(' => TokenTag::LeftParen,
                 ')' => TokenTag::RightParen,
+                '{' => TokenTag::LeftCurly,
+                '}' => TokenTag::RightCurly,
                 '+' => TokenTag::Plus,
                 '*' => TokenTag::Star,
                 '/' => TokenTag::Slash,
@@ -117,44 +119,27 @@ impl Lexer {
                     TokenTag::Number(number)
                 },
 
-                // Keywords
-                'f' => {
-                    if self.match_word("unc") {
-                        TokenTag::Func
-                    } else if self.match_word("alse") {
-                        TokenTag::False
-                    } else {
-                        TokenTag::Identifier
-                    }
-                },
-
-                't' => {
-                    if self.match_word("rue") {
-                        TokenTag::True
-                    } else {
-                        TokenTag::Identifier
-                    }
-                },
-
-                'p' => {
-                    if self.match_word("rint") {
-                        TokenTag::Print
-                    } else {
-                        TokenTag::Identifier
-                    }
-                }
-
-                // Identifiers
+                // Identifiers and keywords
                 'A'..='Z' | 'a'..='z' | '_' => {
-                    while let Some(ch) = self.current() {
-                        if !self.is_next_identifier_char(ch) {
-                            break;
-                        }
-
-                        self.accept();
-                    };
-
-                    TokenTag::Identifier
+                    match ch {
+                        'p' => self.lex_keyword(
+                            "rint",
+                            TokenTag::Print
+                        ),
+                        'l' => self.lex_keyword(
+                            "et",
+                            TokenTag::Let
+                        ),
+                        't' => self.lex_keyword(
+                            "rue",
+                            TokenTag::True
+                        ),
+                        'i' => self.lex_keyword(
+                            "f",
+                            TokenTag::If
+                        ),
+                        _ => self.lex_identifier()
+                    }
                 },
                 _ => return Err(LexicalError {
                     token: self.create_token(TokenTag::Error),
@@ -187,6 +172,29 @@ impl Lexer {
         }
     }
 
+    fn lex_keyword(&mut self, word: &'static str, tag: TokenTag) -> TokenTag {
+        if self.match_word(word) {
+            return tag;
+        }
+
+        self.lex_identifier()
+    }
+
+    fn lex_identifier(&mut self) -> TokenTag {
+        let mut name = String::new();
+        name.push(self.prev().unwrap());
+
+        while let Some(ch) = self.current() {
+            if !self.is_next_identifier_char(ch) {
+                break;
+            }
+
+            name.push(self.accept().unwrap());
+        };
+
+        TokenTag::Identifier(name)
+    }
+
     fn match_word(&mut self, word: &'static str) -> bool {
         if self.check_word(word) {
             self.curr += word.len();
@@ -197,7 +205,7 @@ impl Lexer {
     }
 
     fn check_word(&mut self, word: &'static str) -> bool {
-        &self.src[self.curr..=word.len()] == String::from(word)
+        &self.src[self.curr..self.curr+word.len()] == String::from(word)
     }
 
     fn match_next(&mut self, ch: char) -> bool {
@@ -225,6 +233,10 @@ impl Lexer {
         }
 
         return ch;
+    }
+
+    fn prev(&self) -> Option<char> {
+        self.src.chars().nth(self.curr-1)
     }
 
     fn current(&self) -> Option<char> {

@@ -1,11 +1,14 @@
-use crate::{lexer::token::{
-    Token
-}, errors::DebugInfo};
+use crate::{
+    lexer::token::{
+        Token
+    }
+};
 
 #[derive(Debug)]
 pub enum PrimaryNode {
     Literal(f64),
     Paren(Box<Expression>),
+    Identifier(Token)
 }
 
 pub struct UnaryNode {

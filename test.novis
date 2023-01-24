@@ -1,1 +1,8 @@
-print 2+2^2^3
+let a = 1+32;
+print a;
+print a+32;
+
+{
+    let a = 7;
+    print a;
+}

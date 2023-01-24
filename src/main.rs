@@ -4,14 +4,14 @@ mod parser;
 mod interpreter;
 mod code_stream;
 
-use std::env;
+use std::{env};
 use code_stream::{
     FileStream
 };
 use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
-use crate::errors::DescribableError;
+// use crate::errors::DescribableError;
 
 fn main() {
     let argv: Vec<String> = env::args().collect();
@@ -24,17 +24,8 @@ fn main() {
     let mut parser = Parser::new(tokens);
     let statements = parser.parse();
 
-    match statements {
-        Ok(statements) => {
-            let interpreter = Interpreter::new(statements);
-            interpreter.interpret();
-        },
-        Err(errors) => {
-            errors
-                .iter()
-                .map(|e| {
-                    e.print()
-                });
-        }
-    };
+    if let Ok(statements) = statements {
+        let interpreter = Interpreter::new(statements);
+        interpreter.interpret();
+    }
 }

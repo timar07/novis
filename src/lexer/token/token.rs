@@ -9,6 +9,7 @@ pub struct Token {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+#[allow(dead_code)]
 pub enum TokenTag {
     // One character long
     Plus,
@@ -24,6 +25,8 @@ pub enum TokenTag {
     Equal,
     LeftParen,
     RightParen,
+    LeftCurly,
+    RightCurly,
     // Two character long
     ArrowLeft,
     ArrowRight,
@@ -36,10 +39,12 @@ pub enum TokenTag {
     True,
     Func,
     Print,
+    Let,
+    If,
     // Other
     Number(f64),
     String(String),
-    Identifier,
+    Identifier(String),
     Error,
     EndOfFile
 }

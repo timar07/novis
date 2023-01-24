@@ -1,8 +1,20 @@
-use crate::{lexer::token::Token, parser::ast::expression::Expression};
+use crate::{
+    parser::ast::expression::Expression,
+    lexer::token::Token
+};
 
+#[derive(Debug)]
 pub enum Statement {
     Print {
-        value: Expression,
-        keyword: Token
+        expr: Box<Expression>,
+    },
+    Let {
+        name: Token,
+        expr: Box<Expression>
+    },
+    Group(Vec<Statement>),
+    Cond {
+        condition: Box<Expression>,
+        if_block: Box<Statement>
     }
 }

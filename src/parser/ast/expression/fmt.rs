@@ -1,5 +1,6 @@
 use std::fmt::{
-    Display, self, Binary
+    self,
+    Display
 };
 
 use super::expression::{

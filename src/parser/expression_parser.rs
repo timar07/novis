@@ -1,173 +1,179 @@
-use std::string::String;
-use crate::{lexer::token::{Token, TokenTag::*}, errors::DebugInfo};
-use super::{ast::expression::{
-    Expression, PrimaryNode, UnaryNode, BinaryNode,
-}, parse_error::ParseError, token_stream::TokenStream};
+use crate::{
+    lexer::token::TokenTag::*,
+};
+use super::{
+    ast::expression::{
+        Expression,
+        PrimaryNode,
+        UnaryNode,
+        BinaryNode,
+    },
+    parse_error::ParseError,
+    token_stream::TokenStream
+};
 
-pub struct ExpressionParser {
-    tokens: TokenStream,
+
+/// This function implements expression parsing
+/// # Arguments
+/// * `tokens` - Stream of the tokens
+pub fn expression(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    equality(tokens)
 }
 
-impl ExpressionParser {
-    pub fn new(tokens: TokenStream) -> ExpressionParser {
-        ExpressionParser {
-            tokens: tokens,
-        }
+/// # Rule
+/// ```
+/// equality = comparison (('!=' | '==') comparison)*;
+/// ```
+fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    let mut expr = comparison(tokens);
+
+    while tokens.match_next(&[BangEqual, EqualEqual]) {
+
+        let node = Expression::Binary(
+            BinaryNode {
+                op: tokens.prev().expect("Expected equality operator"),
+                left: expr?,
+                right: comparison(tokens)?,
+            }
+        );
+        expr = Ok(Box::new(node))
+    };
+
+    expr
+}
+
+/// # Rule
+/// ```
+/// comparison = term (('<' | '>' | '<=' | '>=') term)*;
+/// ```
+fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    let mut expr = term(tokens);
+
+    while tokens.match_next(
+        &[Less, Greater, LessEqual, GreaterEqual]
+    ) {
+
+        let node = Expression::Binary(
+            BinaryNode {
+                op: tokens.prev().unwrap(),
+                left: expr?,
+                right: term(tokens)?,
+            }
+        );
+
+        expr = Ok(Box::new(node));
     }
 
-    pub fn parse(&mut self) -> Result<Box<Expression>, ParseError> {
-        let result = self.expression();
-        match result {
-            Ok(ast) => {
-                println!("{:#}", ast.as_ref());
-                Ok(ast)
-            },
-            Err(error) => Err(error),
-        }
+    expr
+}
+
+/// # Rule
+/// ```
+/// term = factor (('+' | '-') factor)*;
+/// ```
+fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    let mut expr = factor(tokens);
+
+    while tokens.match_next(&[Plus, Minus]) {
+
+        let node = Expression::Binary(
+            BinaryNode {
+                op: tokens.prev().expect("Expected binary operator"),
+                left: expr?,
+                right: factor(tokens)?,
+            }
+        );
+
+        expr = Ok(Box::new(node));
     }
 
-    // * Grammary Rules
+    return expr;
+}
 
-    fn expression(&mut self) -> Result<Box<Expression>, ParseError> {
-        self.equality()
+fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    // factor = unary (('*' | '/') unary)*;
+    let mut expr = exponent(tokens);
+
+    while tokens.match_next(&[Star, Slash]) {
+        let node = Expression::Binary (
+            BinaryNode {
+                op: tokens.prev().expect("Expected binary operator"),
+                left: exponent(tokens)?,
+                right: expr?,
+            }
+        );
+
+        expr = Ok(Box::new(node));
     }
 
-    fn equality(&mut self) -> Result<Box<Expression>, ParseError> {
-        // equality = comparison (('!=' | '==') comparison)*;
-        let mut expr = self.comparison();
+    return expr;
+}
 
-        while self.tokens.match_next(&[BangEqual, EqualEqual]) {
+/// # Rule
+/// ```
+/// exponent = unary (('^') unary)*;
+/// ```
+fn exponent(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    let mut expr = unary(tokens);
 
-            let node = Expression::Binary(
-                BinaryNode {
-                    op: self.tokens.prev().expect("Expected equality operator"),
-                    left: expr?,
-                    right: self.comparison()?,
-                }
-            );
-            expr = Ok(Box::new(node))
-        };
+    if tokens.match_next(&[Circ]) {
+        let node = Expression::Binary(
+            BinaryNode {
+                op: tokens.prev().unwrap(),
+                left: expr?,
+                right: exponent(tokens)?, // TODO: Avoid recursion
+            }
+        );
+        expr = Ok(Box::new(node))
+    };
 
-        expr
+    expr
+}
+
+/// # Rule
+/// ```
+/// unary = '-' primary;
+/// ```
+fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    if tokens.match_next(&[Minus]) {
+        let node = Expression::Unary(
+            UnaryNode {
+                op: tokens.prev().expect("Expected unary operator"),
+                left: primary(tokens)?,
+            }
+        );
+
+        return Ok(Box::new(node));
     }
 
-    fn comparison(&mut self) -> Result<Box<Expression>, ParseError> {
-        // comparison = term (('<' | '>' | '<=' | '>=') term)*;
-        let mut expr = self.term();
+    primary(tokens)
+}
 
-        while self.tokens.match_next(
-            &[Less, Greater, LessEqual, GreaterEqual]
-        ) {
-
-            let node = Expression::Binary(
-                BinaryNode {
-                    op: self.tokens.prev().unwrap(),
-                    left: expr?,
-                    right: self.term()?,
-                }
-            );
-
-            expr = Ok(Box::new(node));
-        }
-
-        expr
+/// # Rule
+/// ```
+/// primary = literal;
+/// ```
+fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    if tokens.current().is_none() {
+        panic!("Unexpected EOF");
     }
 
-    fn term(&mut self) -> Result<Box<Expression>, ParseError> {
-        // term = factor (('+' | '-') factor)*;
-        let mut expr = self.factor();
+    let node = match tokens.accept().unwrap().tag {
+        Number(n) => PrimaryNode::Literal(n),
+        Identifier(_) => PrimaryNode::Identifier(tokens.prev().unwrap()),
+        LeftParen => {
+            let node = PrimaryNode::Paren(expression(tokens)?);
+            tokens
+                .require(&[RightParen])
+                .expect("Expected ')'");
 
-        while self.tokens.match_next(&[Plus, Minus]) {
+            node
+        },
+        _ => return Err(ParseError {
+            msg: "Expected expression".into(),
+            token: tokens.prev().unwrap()
+        })
+    };
 
-            let node = Expression::Binary(
-                BinaryNode {
-                    op: self.tokens.prev().expect("Expected binary operator"),
-                    left: expr?,
-                    right: self.factor()?,
-                }
-            );
-
-            expr = Ok(Box::new(node));
-        }
-
-        return expr;
-    }
-
-    fn factor(&mut self) -> Result<Box<Expression>, ParseError> {
-        // factor = unary (('*' | '/') unary)*;
-        let mut expr = self.exponent();
-
-        while self.tokens.match_next(&[Star, Slash]) {
-            let node = Expression::Binary (
-                BinaryNode {
-                    op: self.tokens.prev().expect("Expected binary operator"),
-                    left: self.exponent()?,
-                    right: expr?,
-                }
-            );
-
-            expr = Ok(Box::new(node));
-        }
-
-        return expr;
-    }
-
-    // TODO: Avoid recursion
-    fn exponent(&mut self) -> Result<Box<Expression>, ParseError> {
-        // exponent = unary (('^') unary)*;
-        let mut expr = self.unary();
-
-        if self.tokens.match_next(&[Circ]) {
-            let node = Expression::Binary(
-                BinaryNode {
-                    op: self.tokens.prev().unwrap(),
-                    left: expr?,
-                    right: self.exponent()?,
-                }
-            );
-            expr = Ok(Box::new(node))
-        };
-
-        expr
-    }
-
-    fn unary(&mut self) -> Result<Box<Expression>, ParseError> {
-        // unary = '-' primary;
-        if self.tokens.match_next(&[Minus]) {
-            let node = Expression::Unary(
-                UnaryNode {
-                    op: self.tokens.prev().expect("Expected unary operator"),
-                    left: self.primary()?,
-                }
-            );
-
-            return Ok(Box::new(node));
-        }
-
-        self.primary()
-    }
-
-    fn primary(&mut self) -> Result<Box<Expression>, ParseError> {
-        if self.tokens.current().is_none() {
-            panic!("Unexpected EOF");
-        }
-
-        let node = match self.tokens.accept().unwrap().tag {
-            Number(n) => PrimaryNode::Literal(n),
-            LeftParen => {
-                let node = PrimaryNode::Paren(self.expression()?);
-                self.tokens
-                    .require(&[RightParen])
-                    .expect("Expected ')'");
-
-                node
-            },
-            _ => return Err(ParseError {
-                msg: String::from("Expected primary value"),
-                token: self.tokens.prev().unwrap()
-            })
-        };
-
-        Ok(Box::new(Expression::Primary(node)))
-    }
+    Ok(Box::new(Expression::Primary(node)))
 }

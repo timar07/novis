@@ -1,16 +1,8 @@
 use std::process;
-
-use crate::{
-    parser::ast::{expression::{
-        Expression,
-        BinaryNode,
-        UnaryNode,
-        PrimaryNode
-    }, statement::Statement},
-    lexer::token::{TokenTag, Token}
+use crate::parser::ast::statement::Statement;
+use super::{
+    statement::statement, env::Env
 };
-
-use super::runtime_error::RuntimeError;
 
 pub struct Interpreter {
     statements: Vec<Statement>
@@ -22,17 +14,13 @@ impl Interpreter {
     }
 
     pub fn interpret(&self) -> () {
-        for statement in &self.statements {
-            // match statement {
-            //     Statement::Print {value, keyword: _} => self.print(value)
-            // };
-        };
-    }
+        let mut global_env = Box::new(Env::global());
 
-    fn print(&self, val: &Token) {
-        match val.tag {
-            TokenTag::Number(n) => println!("{n}"),
-            _ => panic!("Cannot print")
-        }
+        for stmt in &self.statements {
+            if let Err(error) = statement(global_env.as_mut(), stmt) {
+                error.print();
+                process::exit(1);
+            };
+        };
     }
 }

@@ -1,24 +1,37 @@
-use crate::lexer::token::Token;
-
+use crate::{lexer::token::Token, errors::DescribableError};
 use super::{
-    statement_parser::StatementParser,
     token_stream::TokenStream,
     ast::statement::Statement,
-    parse_error::ParseError
+    statement::statement
 };
 
+
 pub struct Parser {
-    tokens: TokenStream
+    pub tokens: Box<TokenStream>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
         Parser {
-            tokens: TokenStream::new(tokens),
+            tokens: Box::new(TokenStream::new(tokens)),
         }
     }
-    pub fn parse(&mut self) -> Result<Vec<Statement>, Vec<ParseError>> {
-        StatementParser::new(self.tokens.clone())
-            .parse()
+    pub fn parse(&mut self) -> Result<Vec<Statement>, ()> {
+        let mut statements = vec![];
+        let mut errors = vec![];
+
+        while !self.tokens.is_at_end() {
+            match statement(self.tokens.as_mut()) {
+                Ok(statement) => statements.push(statement),
+                Err(error) => errors.push(error),
+            }
+        };
+
+        if errors.is_empty() {
+            Ok(statements)
+        } else {
+            for error in errors { error.print() };
+            Err(())
+        }
     }
 }

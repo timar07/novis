@@ -33,6 +33,7 @@ impl TokenStream {
     }
 
     // Check if the current token matches 'token'
+    #[allow(dead_code)]
     fn check(&mut self, token: TokenTag) -> bool {
         if self.current().is_none() {
             return false;

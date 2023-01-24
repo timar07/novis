@@ -2,6 +2,7 @@ use crate::{lexer::token::{
     Token
 }, errors::{DescribableError, print_error}};
 
+#[derive(Debug)]
 pub struct ParseError {
     pub token: Token,
     pub msg: String,
