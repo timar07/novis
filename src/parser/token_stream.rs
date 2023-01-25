@@ -8,6 +8,7 @@ pub struct TokenStream {
 
 impl TokenStream {
     pub fn new(tokens: Vec<Token>) -> TokenStream {
+        // dbg!(&tokens);
         TokenStream { tokens: tokens, curr: 0 }
     }
 
@@ -22,11 +23,9 @@ impl TokenStream {
     // All the same as previous, but consumes the token
     // if it matches
     pub fn match_next(&mut self, tokens: &'static [TokenTag]) -> bool {
-        if let Some(current) = self.current() {
-            if tokens.contains(&current.tag) {
-                self.accept();
-                return true
-            }
+        if tokens.contains(&self.current().tag) {
+            self.accept();
+            return true
         }
 
         false
@@ -35,40 +34,41 @@ impl TokenStream {
     // Check if the current token matches 'token'
     #[allow(dead_code)]
     fn check(&mut self, token: TokenTag) -> bool {
-        if self.current().is_none() {
-            return false;
-        }
-
-        self.current().unwrap().tag == token
+        self.current().tag == token
     }
 
     // Consume token
-    pub fn accept(&mut self) -> Option<Token> {
-        let token = self.current();
-        self.curr += 1;
-        token
+    pub fn accept(&mut self) -> &Token {
+        self.advance();
+        self.prev()
     }
 
-    pub fn prev(&self) -> Option<Token> {
-        if self.is_at_end() { return None; }
+    pub fn advance(&mut self) {
+        self.curr += 1;
+    }
 
-        Some(self.tokens[self.curr - 1].clone())
+    pub fn prev(&self) -> &Token {
+        self.nth(self.curr - 1)
     }
 
     #[allow(dead_code)]
-    pub fn next(&self) -> Option<Token> {
-        if self.is_at_end() { return None; }
-
-        Some(self.tokens[self.curr + 1].clone())
+    pub fn next(&self) -> &Token {
+        self.nth(self.curr + 1)
     }
 
-    pub fn current(&self) -> Option<Token> {
-        if self.is_at_end() { return None; }
-
-        Some(self.tokens[self.curr].clone())
+    pub fn current(&self) -> &Token {
+        self.nth(self.curr)
     }
 
-    pub fn is_at_end(&self) -> bool {
-        self.curr >= self.tokens.len()
+
+    fn nth(&self, n: usize) -> &Token {
+        let mut iter = self.tokens.iter();
+
+        match iter.nth(n) {
+            Some(token) => token,
+            None => {
+                self.prev()
+            },
+        }
     }
 }

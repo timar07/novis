@@ -1,16 +1,14 @@
 use crate::{
     lexer::token::{
         TokenTag
+    },
+    parser::{
+        ast::statement::Statement,
+        token_stream::TokenStream,
+        parse_error::ParseError
     }
 };
-
-use crate::parser::{
-    ast::statement::Statement,
-    token_stream::TokenStream,
-    parse_error::ParseError
-};
-
-use super::expression_parser::expression;
+use super::{expression_parser::expression};
 
 /// This function implements statement parsing
 /// # Arguments
@@ -19,7 +17,7 @@ use super::expression_parser::expression;
 /// All available statements is defeined here
 ///
 pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
-    let token = tokens.accept().unwrap();
+    let token = tokens.accept();
 
     let stmt = match token.tag {
         TokenTag::Print => print(tokens),
@@ -27,16 +25,26 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         TokenTag::LeftCurly => group(tokens),
         TokenTag::Let => var_definition(tokens),
         _ => return Err(ParseError {
-            token: token,
+            token: token.clone(),
             msg: "Expected statement".to_string()
         })
     };
 
     // dbg!(&stmt);
 
-    tokens.require(&[TokenTag::Semicolon]);
+    match tokens.require(&[TokenTag::Semicolon]) {
+        Err(_) => {
+            if tokens.prev().tag == TokenTag::RightCurly {
+                return stmt;
+            }
 
-    stmt
+            Err(ParseError {
+                token: tokens.current().clone(),
+                msg: "Expected semicolon after statement".into()
+            })
+        },
+        _ => stmt
+    }
 }
 
 /// # Rule
@@ -61,12 +69,7 @@ fn cond(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 fn group(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
     let mut group = vec![];
 
-    while let Some(token) = tokens.current() {
-        // if we hit end of the group
-        if token.tag == TokenTag::RightCurly {
-            break;
-        }
-
+    while tokens.current().tag != TokenTag::RightCurly {
         group.push(statement(tokens)?);
     }
 
@@ -94,15 +97,12 @@ fn print(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 fn var_definition(
     tokens: &mut TokenStream
 ) -> Result<Statement, ParseError> {
-    let identifier = match tokens.accept() {
-        Some(token) => match token.tag {
-            TokenTag::Identifier(_) => token,
-            _ => return Err(ParseError {
-                token: token,
-                msg: "Expected identifier name after `let` keyword".to_string()
-            })
-        },
-        None => panic!("Unexpected EOF"),
+    let identifier = match tokens.current().tag {
+        TokenTag::Identifier(_) => tokens.accept().clone(),
+        _ => return Err(ParseError {
+            token: tokens.current().clone(),
+            msg: "Expected identifier name after `let` keyword".to_string()
+        })
     };
 
     tokens

@@ -36,7 +36,7 @@ fn var_definition(
             let val = expression(env, expr)?;
             env.define(id, val);
         }
-        _ => panic!()
+        _ => unreachable!()
     };
     Ok(())
 }
@@ -46,7 +46,7 @@ fn cond(
     condition: &Box<Expression>,
     if_block: &Box<Statement>
 ) -> Result<(), RuntimeError> {
-    if expression(env, condition)? == 1.0 {
+    if expression(env, condition)? != 0.0 {
         statement(env, if_block)?;
     }
 

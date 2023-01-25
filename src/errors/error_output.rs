@@ -15,18 +15,21 @@ pub fn print_error(name: &'static str, msg: String, info: DebugInfo) {
 }
 
 fn print_snippet(info: DebugInfo) {
-    let snippet_prefix = format!("    {} | ", info.line);
+    let snippet_prefix = format!("    {} | ", info.line)
+        .bright_black();
 
-    println!(
-        "{}{}",
-        snippet_prefix,
-        info.src.lines().nth(info.line-1).unwrap()
-    );
+    if let Some(line) = info.src.lines().nth(info.line-1) {
+        println!(
+            "{}{}",
+            snippet_prefix,
+            line
+        );
 
-    println!(
-        "{}{}{}",
-        " ".repeat(snippet_prefix.len() + info.col-1),
-        "~".repeat(info.len-1).red(),
-        "^".red()
-    )
+        println!(
+            "{}{}{}",
+            " ".repeat(snippet_prefix.len() + info.col-1),
+            "~".repeat(info.len-1).red(),
+            "^".red()
+        )
+    }
 }

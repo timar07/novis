@@ -1,13 +1,19 @@
-use std::io;
 use std::rc::Rc;
 use colored::Colorize;
-use crate::errors::{DescribableError, DebugInfo};
-use crate::lexer::token::{
-    Token,
-    TokenTag,
-    Lexeme
+use crate::{
+    code_stream::{
+        FileStream
+    },
+    errors::{
+        DescribableError,
+        DebugInfo,
+    },
+    lexer::token::{
+        Token,
+        TokenTag,
+        Lexeme
+    }
 };
-
 use super::lexical_error::LexicalError;
 
 pub struct Lexer {
@@ -19,14 +25,14 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(src: &String) -> Result<Lexer, io::Error> {
-        Ok(Lexer {
-            src: Rc::new(src.clone()),
+    pub fn from_file(path: &String) -> Lexer {
+        Lexer {
+            src: Rc::new(FileStream::new(path).as_str()),
             line: 1,
             col: 0,
             curr: 0,
             start: 0,
-        })
+        }
     }
 
     pub fn lex(&mut self) -> Vec<Token> {
@@ -34,14 +40,17 @@ impl Lexer {
 
         loop  {
             match self.lex_token() {
-                Ok(token) => match token.tag {
-                    TokenTag::EndOfFile => break,
-                    _ => {
-                        println!("{token}");
-                        tokens.push(token)
+                Ok(token) => {
+                    tokens.push(token.clone());
+
+                    if token.tag == TokenTag::EndOfFile {
+                        break;
                     }
-                },
-                Err(error) => error.print(),
+                 }
+                Err(error) => {
+                    tokens.push(error.token.clone());
+                    error.print()
+                }
             }
         }
 
@@ -65,6 +74,13 @@ impl Lexer {
                 ',' => TokenTag::Comma,
                 ';' => TokenTag::Semicolon,
                 '^' => TokenTag::Circ,
+                '!' => {
+                    if self.match_next('=') {
+                        TokenTag::BangEqual
+                    } else {
+                        TokenTag::Bang
+                    }
+                },
                 '-' => {
                     if self.match_next('>') {
                         TokenTag::ArrowRight
@@ -95,29 +111,8 @@ impl Lexer {
                         TokenTag::Equal
                     }
                 },
-                '"' => {
-                    while self.accept().unwrap() != '"' {
-                        if self.current().is_none() {
-                            panic!("Unterminated string");
-                        }
-                    };
-
-                    TokenTag::String(String::from(""))
-                },
-                '0'..='9' => {
-                    let mut number: f64 = f64::from(ch.to_digit(10).unwrap());
-
-                    while let Some(digit) = self.current() {
-                        if !digit.is_ascii_digit() {
-                            break;
-                        }
-
-                        number *= 10.0;
-                        number += f64::from(self.accept().unwrap().to_digit(10).unwrap());
-                    };
-
-                    TokenTag::Number(number)
-                },
+                '"' => self.lex_string(),
+                '0'..='9' => self.lex_number(),
 
                 // Identifiers and keywords
                 'A'..='Z' | 'a'..='z' | '_' => {
@@ -141,13 +136,15 @@ impl Lexer {
                         _ => self.lex_identifier()
                     }
                 },
-                _ => return Err(LexicalError {
-                    token: self.create_token(TokenTag::Error),
-                    msg: format!(
-                        "Unexpected token '{}'",
-                        String::from(ch).underline()
-                    )
-                })
+                _ => {
+                    return Err(LexicalError {
+                        token: self.create_token(TokenTag::Error),
+                        msg: format!(
+                            "Unexpected token '{}'",
+                            String::from(ch).underline()
+                        )
+                    })
+                }
             };
 
             Ok(self.create_token(token_tag))
@@ -165,11 +162,21 @@ impl Lexer {
             },
             info: DebugInfo {
                 line: self.line,
-                col: self.col,
+                col: self.col-1,
                 len: self.curr-self.start,
                 src: self.src.clone()
             }
         }
+    }
+
+    fn lex_string(&mut self) -> TokenTag {
+        while self.accept().unwrap() != '"' {
+            if self.current().is_none() {
+                panic!("Unterminated string");
+            }
+        };
+
+        TokenTag::String(String::from(""))
     }
 
     fn lex_keyword(&mut self, word: &'static str, tag: TokenTag) -> TokenTag {
@@ -193,6 +200,22 @@ impl Lexer {
         };
 
         TokenTag::Identifier(name)
+    }
+
+    fn lex_number(&mut self) -> TokenTag {
+        let ch = self.prev().unwrap();
+        let mut number: f64 = f64::from(ch.to_digit(10).unwrap());
+
+        while let Some(digit) = self.current() {
+            if !digit.is_ascii_digit() {
+                break;
+            }
+
+            number *= 10.0;
+            number += f64::from(self.accept().unwrap().to_digit(10).unwrap());
+        };
+
+        TokenTag::Number(number)
     }
 
     fn match_word(&mut self, word: &'static str) -> bool {

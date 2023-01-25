@@ -28,6 +28,8 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<f64, RuntimeError> {
         TokenTag::Minus => left - right,
         TokenTag::Star => left * right,
         TokenTag::Circ => left.powf(right),
+        TokenTag::EqualEqual => if left == right { 1.0 } else { 0.0 },
+        TokenTag::BangEqual => if left != right { 1.0 } else { 0.0 },
         TokenTag::Slash => {
             if right == 0.0 {
                 return Err(RuntimeError {

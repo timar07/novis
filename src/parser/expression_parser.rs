@@ -31,7 +31,7 @@ fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 
         let node = Expression::Binary(
             BinaryNode {
-                op: tokens.prev().expect("Expected equality operator"),
+                op: tokens.prev().clone(),
                 left: expr?,
                 right: comparison(tokens)?,
             }
@@ -55,7 +55,7 @@ fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 
         let node = Expression::Binary(
             BinaryNode {
-                op: tokens.prev().unwrap(),
+                op: tokens.prev().clone(),
                 left: expr?,
                 right: term(tokens)?,
             }
@@ -78,7 +78,7 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 
         let node = Expression::Binary(
             BinaryNode {
-                op: tokens.prev().expect("Expected binary operator"),
+                op: tokens.prev().clone(),
                 left: expr?,
                 right: factor(tokens)?,
             }
@@ -97,7 +97,7 @@ fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     while tokens.match_next(&[Star, Slash]) {
         let node = Expression::Binary (
             BinaryNode {
-                op: tokens.prev().expect("Expected binary operator"),
+                op: tokens.prev().clone(),
                 left: exponent(tokens)?,
                 right: expr?,
             }
@@ -119,7 +119,7 @@ fn exponent(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     if tokens.match_next(&[Circ]) {
         let node = Expression::Binary(
             BinaryNode {
-                op: tokens.prev().unwrap(),
+                op: tokens.prev().clone(),
                 left: expr?,
                 right: exponent(tokens)?, // TODO: Avoid recursion
             }
@@ -138,7 +138,7 @@ fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     if tokens.match_next(&[Minus]) {
         let node = Expression::Unary(
             UnaryNode {
-                op: tokens.prev().expect("Expected unary operator"),
+                op: tokens.prev().clone(),
                 left: primary(tokens)?,
             }
         );
@@ -154,13 +154,9 @@ fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 /// primary = literal;
 /// ```
 fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
-    if tokens.current().is_none() {
-        panic!("Unexpected EOF");
-    }
-
-    let node = match tokens.accept().unwrap().tag {
+    let node = match tokens.accept().tag {
         Number(n) => PrimaryNode::Literal(n),
-        Identifier(_) => PrimaryNode::Identifier(tokens.prev().unwrap()),
+        Identifier(_) => PrimaryNode::Identifier(tokens.prev().clone()),
         LeftParen => {
             let node = PrimaryNode::Paren(expression(tokens)?);
             tokens
@@ -171,7 +167,7 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         },
         _ => return Err(ParseError {
             msg: "Expected expression".into(),
-            token: tokens.prev().unwrap()
+            token: tokens.prev().clone()
         })
     };
 

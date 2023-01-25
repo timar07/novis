@@ -16,5 +16,5 @@ pub enum Statement {
     Cond {
         condition: Box<Expression>,
         if_block: Box<Statement>
-    }
+    },
 }

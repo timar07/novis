@@ -1,7 +1,6 @@
 use crate::errors::DebugInfo;
 
 #[derive(Debug, Clone)]
-
 pub struct Token {
     pub tag: TokenTag,
     pub lexeme: Lexeme,
@@ -16,6 +15,7 @@ pub enum TokenTag {
     Minus,
     Star,
     Slash,
+    Bang,
     Dot,
     Comma,
     Circ,

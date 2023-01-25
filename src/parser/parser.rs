@@ -1,8 +1,8 @@
-use crate::{lexer::token::Token, errors::DescribableError};
+use crate::{lexer::token::{Token, TokenTag}, errors::DescribableError};
 use super::{
     token_stream::TokenStream,
     ast::statement::Statement,
-    statement::statement
+    statement::statement, sync::sync
 };
 
 
@@ -20,18 +20,21 @@ impl Parser {
         let mut statements = vec![];
         let mut errors = vec![];
 
-        while !self.tokens.is_at_end() {
+        while self.tokens.current().tag != TokenTag::EndOfFile {
             match statement(self.tokens.as_mut()) {
                 Ok(statement) => statements.push(statement),
-                Err(error) => errors.push(error),
+                Err(error) => {
+                    sync(&mut self.tokens);
+                    errors.push(error);
+                },
             }
         };
 
-        if errors.is_empty() {
-            Ok(statements)
-        } else {
+        if !errors.is_empty() {
             for error in errors { error.print() };
-            Err(())
+            return Err(())
         }
+
+        Ok(statements)
     }
 }

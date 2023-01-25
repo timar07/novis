@@ -5,9 +5,6 @@ mod interpreter;
 mod code_stream;
 
 use std::{env};
-use code_stream::{
-    FileStream
-};
 use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
@@ -15,10 +12,8 @@ use parser::Parser;
 
 fn main() {
     let argv: Vec<String> = env::args().collect();
-    let source = FileStream::new(&argv[1]).as_str();
 
-    let mut lexer = Lexer::new(&source)
-        .expect("Couldn't open file");
+    let mut lexer = Lexer::from_file(&argv[1]);
 
     let tokens = lexer.lex();
     let mut parser = Parser::new(tokens);
