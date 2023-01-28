@@ -4,11 +4,18 @@ use crate::{
     }
 };
 
+#[derive(Debug, Clone)]
+pub enum LiteralValue {
+    String(String),
+    Number(f64),
+}
+
 #[derive(Debug)]
 pub enum PrimaryNode {
-    Literal(f64),
+    Literal(LiteralValue),
     Paren(Box<Expression>),
-    Identifier(Token)
+    Identifier(Token),
+    Call(Token)
 }
 
 pub struct UnaryNode {

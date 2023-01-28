@@ -1,12 +1,12 @@
 use crate::{
-    lexer::token::TokenTag::*,
+    lexer::token::TokenTag::{*, self},
 };
 use super::{
     ast::expression::{
         Expression,
         PrimaryNode,
         UnaryNode,
-        BinaryNode,
+        BinaryNode, LiteralValue,
     },
     parse_error::ParseError,
     token_stream::TokenStream
@@ -21,7 +21,7 @@ pub fn expression(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseErro
 }
 
 /// # Rule
-/// ```
+/// ```ebnf
 /// equality = comparison (('!=' | '==') comparison)*;
 /// ```
 fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
@@ -43,7 +43,7 @@ fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 }
 
 /// # Rule
-/// ```
+/// ```ebnf
 /// comparison = term (('<' | '>' | '<=' | '>=') term)*;
 /// ```
 fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
@@ -75,7 +75,6 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     let mut expr = factor(tokens);
 
     while tokens.match_next(&[Plus, Minus]) {
-
         let node = Expression::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
@@ -90,16 +89,20 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     return expr;
 }
 
+
+/// # Rule
+/// ```ebnf
+/// factor = unary (('*' | '/') unary)*;
+/// ```
 fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
-    // factor = unary (('*' | '/') unary)*;
     let mut expr = exponent(tokens);
 
     while tokens.match_next(&[Star, Slash]) {
         let node = Expression::Binary (
             BinaryNode {
                 op: tokens.prev().clone(),
-                left: exponent(tokens)?,
-                right: expr?,
+                left: expr?,
+                right: exponent(tokens)?,
             }
         );
 
@@ -110,7 +113,7 @@ fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 }
 
 /// # Rule
-/// ```
+/// ```ebnf
 /// exponent = unary (('^') unary)*;
 /// ```
 fn exponent(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
@@ -131,7 +134,7 @@ fn exponent(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 }
 
 /// # Rule
-/// ```
+/// ```ebnf
 /// unary = '-' primary;
 /// ```
 fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
@@ -150,13 +153,23 @@ fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 }
 
 /// # Rule
-/// ```
-/// primary = literal;
+/// ```ebnf
+/// primary = literal | identifier | '(' expression ')';
 /// ```
 fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
-    let node = match tokens.accept().tag {
-        Number(n) => PrimaryNode::Literal(n),
-        Identifier(_) => PrimaryNode::Identifier(tokens.prev().clone()),
+    let node = match &tokens.accept().tag {
+        Number(n) => PrimaryNode::Literal(
+            LiteralValue::Number(*n)
+        ),
+        String(str) => PrimaryNode::Literal(
+            LiteralValue::String(str.clone())
+        ),
+        Identifier(_) => {
+            match tokens.current().tag {
+                TokenTag::LeftParen => call(tokens)?,
+                _ => PrimaryNode::Identifier(tokens.prev().clone())
+            }
+        },
         LeftParen => {
             let node = PrimaryNode::Paren(expression(tokens)?);
             tokens
@@ -172,4 +185,20 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     };
 
     Ok(Box::new(Expression::Primary(node)))
+}
+
+/// # Rule
+/// Function call matches following grammary:
+/// ```
+/// call = identifier '(' params ')';
+/// ```
+fn call(
+    tokens: &mut TokenStream,
+) -> Result<PrimaryNode, ParseError> {
+    let identifier = tokens.prev().clone();
+
+    tokens.require(&[TokenTag::LeftParen])?;
+    tokens.require(&[TokenTag::RightParen])?;
+
+    Ok(PrimaryNode::Call(identifier))
 }

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     lexer::token::{
         TokenTag
@@ -8,7 +10,7 @@ use crate::{
         parse_error::ParseError
     }
 };
-use super::{expression_parser::expression};
+use super::{expression::expression};
 
 /// This function implements statement parsing
 /// # Arguments
@@ -22,12 +24,18 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
     let stmt = match token.tag {
         TokenTag::Print => print(tokens),
         TokenTag::If => cond(tokens),
+        TokenTag::Loop => r#loop(tokens),
         TokenTag::LeftCurly => group(tokens),
         TokenTag::Let => var_definition(tokens),
-        _ => return Err(ParseError {
-            token: token.clone(),
-            msg: "Expected statement".to_string()
-        })
+        TokenTag::Func => func_definition(tokens),
+        _ => {
+            if tokens.current().tag == TokenTag::LeftParen {
+                tokens.discard(); // push token back
+                expr_stmt(tokens)
+            } else {
+                assignment(tokens)
+            }
+        }
     };
 
     // dbg!(&stmt);
@@ -48,22 +56,92 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 }
 
 /// # Rule
-/// Conditional statement matches following grammary:
+/// Function definition matches following grammary:
 /// ```
+/// func = 'func' identifier (params) -> statement;
+/// params = param (',' param)*;
+/// param = identifier;
+/// ```
+fn func_definition(
+    tokens: &mut TokenStream
+) -> Result<Statement, ParseError> {
+    let identifier = match tokens.current().tag {
+        TokenTag::Identifier(_) => tokens.accept().clone(),
+        _ => return Err(ParseError {
+            token: tokens.current().clone(),
+            msg: "Expected identifier".to_string()
+        })
+    };
+
+    tokens.require(&[TokenTag::LeftParen])?;
+
+    let mut params = vec![];
+
+    // loop {
+    //     match tokens.current().tag {
+    //         TokenTag::Identifier(_) => params.push(tokens.accept().clone()),
+    //         TokenTag::RightParen => {
+    //             tokens.accept();
+    //             break;
+    //         },
+    //         _ => return Err(ParseError {
+    //             msg: format!("Unexpected token `{:?}`", tokens.current().tag),
+    //             token: tokens.current().clone()
+    //         })
+    //     };
+    // }
+
+    tokens.require(&[TokenTag::RightParen])?;
+    tokens.require(&[TokenTag::ArrowRight])?;
+
+    let body = statement(tokens)?;
+
+    Ok(Statement::Func {
+        name: identifier,
+        params: params,
+        body: Rc::new(body)
+    })
+}
+
+/// # Rule
+/// Loop statement matches following grammary:
+/// ```
+/// loop = 'loop' expression group;
+/// ```
+fn r#loop(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
+    let condition = expression(tokens);
+    let body = statement(tokens);
+
+    Ok(Statement::Loop {
+        condition: condition?,
+        body: Box::new(body?)
+    })
+}
+
+/// # Rule
+/// Conditional statement matches following grammary:
+/// ```ebnf
 /// cond = 'if' expression group ('else' group)?;
 /// ```
 fn cond(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
     let condition = expression(tokens);
     let if_block = statement(tokens);
+    let mut else_block = None;
+
+    if tokens.match_next(&[TokenTag::Else]) {
+        else_block = Some(Box::new(statement(tokens)?));
+    }
+
     Ok(Statement::Cond {
         condition: condition?,
-        if_block: Box::new(if_block?)
+        if_block: Box::new(if_block?),
+        else_block: else_block
     })
 }
 
 /// # Rule
 /// Group statement matches following grammary:
-/// ```
+/// ```ebnf
 /// group = '{' statement* '}' ';';
 /// ```
 fn group(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
@@ -80,7 +158,7 @@ fn group(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 
 /// # Rule
 /// Print statement matches following grammary:
-/// ```
+/// ```ebnf
 /// print = 'print' expression ';';
 /// ```
 fn print(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
@@ -105,12 +183,41 @@ fn var_definition(
         })
     };
 
-    tokens
-        .require(&[TokenTag::Equal])
-        .expect("Expected assignment");
+    tokens.require(&[TokenTag::Equal])?;
 
     Ok(Statement::Let {
         name: identifier,
+        expr: expression(tokens)?
+    })
+}
+
+/// # Rule
+/// Variable assignment matches following grammary:
+/// ```
+/// assign = identifier '=' expression ';';
+/// ```
+fn assignment(
+    tokens: &mut TokenStream,
+) -> Result<Statement, ParseError> {
+    let identifier = tokens.prev().clone();
+
+    tokens.require(&[TokenTag::Equal])?;
+
+    Ok(Statement::Assignment {
+        name: identifier,
+        expr: expression(tokens)?
+    })
+}
+
+/// # Rule
+/// Expression statement matches following grammary:
+/// ```
+/// expr_stmt = expression ';';
+/// ```
+fn expr_stmt(
+    tokens: &mut TokenStream,
+) -> Result<Statement, ParseError> {
+    Ok(Statement::Expression {
         expr: expression(tokens)?
     })
 }

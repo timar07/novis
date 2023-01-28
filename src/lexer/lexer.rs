@@ -22,6 +22,7 @@ pub struct Lexer {
     pub start: usize,
     pub col: usize,
     pub line: usize,
+    pub fname: String,
 }
 
 impl Lexer {
@@ -32,6 +33,7 @@ impl Lexer {
             col: 0,
             curr: 0,
             start: 0,
+            fname: path.clone()
         }
     }
 
@@ -41,6 +43,7 @@ impl Lexer {
         loop  {
             match self.lex_token() {
                 Ok(token) => {
+                    // dbg!(&token);
                     tokens.push(token.clone());
 
                     if token.tag == TokenTag::EndOfFile {
@@ -117,14 +120,25 @@ impl Lexer {
                 // Identifiers and keywords
                 'A'..='Z' | 'a'..='z' | '_' => {
                     match ch {
+                        'e' => self.lex_keyword("lse", TokenTag::Else),
+                        'f' => {
+                            match self.current() {
+                                Some('a') => self.lex_keyword("alse",TokenTag::False),
+                                Some('u') => self.lex_keyword("unc",TokenTag::Func),
+                                _ => self.lex_identifier()
+                            }
+                        }
                         'p' => self.lex_keyword(
                             "rint",
                             TokenTag::Print
                         ),
-                        'l' => self.lex_keyword(
-                            "et",
-                            TokenTag::Let
-                        ),
+                        'l' => {
+                            match self.current() {
+                                Some('e') => self.lex_keyword("et",TokenTag::Let),
+                                Some('o') => self.lex_keyword("oop",TokenTag::Loop),
+                                _ => self.lex_identifier()
+                            }
+                        },
                         't' => self.lex_keyword(
                             "rue",
                             TokenTag::True
@@ -154,6 +168,7 @@ impl Lexer {
     }
 
     fn create_token(&self, tag: TokenTag) -> Token {
+        let len = self.curr-self.start;
         Token {
             tag: tag,
             lexeme: Lexeme {
@@ -161,9 +176,10 @@ impl Lexer {
                 end: self.curr
             },
             info: DebugInfo {
+                fname: self.fname.clone(),
                 line: self.line,
-                col: self.col-1,
-                len: self.curr-self.start,
+                col: self.col-len+1,
+                len: len,
                 src: self.src.clone()
             }
         }
@@ -176,7 +192,7 @@ impl Lexer {
             }
         };
 
-        TokenTag::String(String::from(""))
+        TokenTag::String(String::from(&self.src[self.start+1..self.curr-1]))
     }
 
     fn lex_keyword(&mut self, word: &'static str, tag: TokenTag) -> TokenTag {
@@ -204,23 +220,47 @@ impl Lexer {
 
     fn lex_number(&mut self) -> TokenTag {
         let ch = self.prev().unwrap();
-        let mut number: f64 = f64::from(ch.to_digit(10).unwrap());
+        let mut mantissa: f64 = f64::from(ch.to_digit(10).unwrap());
+        let mut exp = 0;
 
         while let Some(digit) = self.current() {
             if !digit.is_ascii_digit() {
                 break;
             }
 
-            number *= 10.0;
-            number += f64::from(self.accept().unwrap().to_digit(10).unwrap());
+            mantissa *= 10.0;
+            mantissa += self.lex_digit();
         };
 
-        TokenTag::Number(number)
+        if self.current() == Some('.') {
+            self.accept();
+
+            while let Some(digit) = self.current() {
+                if !digit.is_ascii_digit() {
+                    break;
+                }
+
+                exp += 1;
+                mantissa *= 10.0;
+                mantissa += self.lex_digit();
+            }
+        }
+
+        TokenTag::Number(
+            f64::from(
+                mantissa/10.0_f64.powi(exp)
+            )
+        )
+    }
+
+    fn lex_digit(&mut self) -> f64 {
+        f64::from(self.accept().unwrap().to_digit(10).unwrap())
     }
 
     fn match_word(&mut self, word: &'static str) -> bool {
         if self.check_word(word) {
             self.curr += word.len();
+            self.col += word.len();
             return true;
         }
 
@@ -250,12 +290,17 @@ impl Lexer {
             if ch.unwrap() == '\n' {
                 self.line += 1;
                 self.col = 0;
+            } else {
+                self.col += 1;
             }
-
-            self.col += 1;
         }
 
         return ch;
+    }
+
+    #[allow(dead_code)]
+    fn next(&self) -> Option<char> {
+        self.src.chars().nth(self.curr+1)
     }
 
     fn prev(&self) -> Option<char> {

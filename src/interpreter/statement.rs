@@ -1,12 +1,14 @@
+use std::rc::Rc;
+
 use crate::{
     parser::ast::{
         statement::Statement,
-        expression::Expression
+        expression::{Expression}
     },
     interpreter::expression::expression, lexer::token::{TokenTag, Token}
 };
 
-use super::{runtime_error::RuntimeError, env::Env};
+use super::{runtime_error::RuntimeError, env::Env, value::Value};
 
 
 pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeError> {
@@ -16,14 +18,82 @@ pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeErro
         } => print(env, expr),
         Statement::Cond {
             condition,
-            if_block
-        } => cond(env, condition, if_block),
+            if_block,
+            else_block
+        } => cond(env, condition, if_block, else_block),
+        Statement::Loop {
+            condition,
+            body
+        } => r#loop(env, condition, body),
+        Statement::Assignment {
+            name,
+            expr
+         } => assignment(env, name, expr),
         Statement::Group(items) => group(env, items),
         Statement::Let {
             name,
             expr
-        } => var_definition(env, name, expr)
+        } => var_definition(env, name, expr),
+        Statement::Func {
+            name,
+            params,
+            body
+        } => func_definition(env, name, params, body),
+        Statement::Expression { expr } => {
+            match expression(env, expr) {
+                Ok(_) => Ok(()),
+                Err(error) => Err(error),
+            }
+        }
     }
+}
+
+fn assignment(
+    env: &mut Env,
+    name: &Token,
+    expr: &Box<Expression>
+) -> Result<(), RuntimeError> {
+    match name.tag.clone() {
+        TokenTag::Identifier(id) => {
+            if env.get(&id).is_some() {
+                let val = expression(env, expr)?;
+                env.set(&id, val);
+            } else {
+                return Err(RuntimeError {
+                    msg: format!("Name `{}` is not defined", id),
+                    info: name.info.clone(),
+                })
+            }
+        }
+        _ => unreachable!()
+    };
+    Ok(())
+}
+
+fn func_definition(
+    env: &mut Env,
+    name: &Token,
+    params: &Vec<Token>,
+    body: &Rc<Statement>
+) -> Result<(), RuntimeError> {
+    match name.tag.clone() {
+        TokenTag::Identifier(id) => {
+            if env.get_local(&id).is_none() {
+                env.define(id, Value::Function {
+                    name: name.clone(),
+                    closure: env.clone(),
+                    body: body.clone()
+                });
+            } else {
+                return Err(RuntimeError {
+                    msg: format!("Function `{}` is already defined", id),
+                    info: name.info.clone(),
+                })
+            }
+        }
+        _ => unreachable!()
+    };
+    Ok(())
 }
 
 fn var_definition(
@@ -33,38 +103,80 @@ fn var_definition(
 ) -> Result<(), RuntimeError> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
-            let val = expression(env, expr)?;
-            env.define(id, val);
+            if env.get_local(&id).is_none() {
+                let val = expression(env, expr)?;
+                env.define(id, val);
+            } else {
+                return Err(RuntimeError {
+                    msg: format!("Name `{}` is already defined", id),
+                    info: name.info.clone(),
+                })
+            }
         }
         _ => unreachable!()
     };
     Ok(())
 }
 
+fn r#loop(
+    env: &mut Env,
+    condition: &Box<Expression>,
+    body: &Box<Statement>
+) -> Result<(), RuntimeError> {
+    while expression(env, condition)?.to_boolean()? == Value::Boolean(true) {
+        statement(env, body)?;
+    }
+
+    Ok(())
+}
+
 fn cond(
     env: &mut Env,
     condition: &Box<Expression>,
-    if_block: &Box<Statement>
+    if_block: &Box<Statement>,
+    else_block: &Option<Box<Statement>>
 ) -> Result<(), RuntimeError> {
-    if expression(env, condition)? != 0.0 {
+    if expression(env, condition)?.to_boolean()? == Value::Boolean(true) {
         statement(env, if_block)?;
+    }
+
+    if let Some(else_block) = else_block {
+        statement(env, else_block)?;
     }
 
     Ok(())
 }
 
 fn group(env: &mut Env, items: &Vec<Statement>) -> Result<(), RuntimeError> {
-    let mut new_env = Box::new(Env::local(env));
+    let mut new_env = Box::new(
+        Env::local(
+            Box::new(env.to_owned())
+        )
+    );
 
     for item in items {
         statement(new_env.as_mut(), item)?;
     };
+
+    // leave environment
+    *env = new_env.get_enclosing();
+
     Ok(())
 }
 
 fn print(env: &mut Env, expr: &Box<Expression>) -> Result<(), RuntimeError> {
     match expression(env, &expr) {
-        Ok(n) => println!("{n}"),
+        Ok(val) => match val {
+            Value::String(str) => println!("{str}"),
+            Value::Number(n) => println!("{n}"),
+            _ => {
+                panic!();
+                //     Err(RuntimeError {
+                //     msg: format!("Cannot print value of type {:?}", val),
+                //     info: expr
+                // })
+            }
+        },
         Err(err) => return Err(err),
     };
 

@@ -4,14 +4,16 @@ use crate::{
         Expression,
         BinaryNode,
         UnaryNode,
-        PrimaryNode
+        PrimaryNode, LiteralValue
     },
     lexer::token::TokenTag
 };
 
-use super::runtime_error::RuntimeError;
+use super::{runtime_error::RuntimeError, value::Value, statement::statement};
 
-pub fn expression(env: &mut Env, ast: &Expression) -> Result<f64, RuntimeError> {
+type ExpressionValue = Result<Value, RuntimeError>;
+
+pub fn expression(env: &mut Env, ast: &Expression) -> ExpressionValue {
     match ast {
         Expression::Binary(bin_expr) => binary(env, bin_expr),
         Expression::Unary(un_expr) => unary(env, un_expr),
@@ -19,27 +21,100 @@ pub fn expression(env: &mut Env, ast: &Expression) -> Result<f64, RuntimeError> 
     }
 }
 
-fn binary(env: &mut Env, node: &BinaryNode) -> Result<f64, RuntimeError> {
-    let left: f64 = expression(env, node.left.as_ref())?;
-    let right: f64 = expression(env, node.right.as_ref())?;
+fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
+    let left = expression(env, node.left.as_ref())?;
+    let right = expression(env, node.right.as_ref())?;
 
     let val = match node.op.tag {
-        TokenTag::Plus => left + right,
-        TokenTag::Minus => left - right,
-        TokenTag::Star => left * right,
-        TokenTag::Circ => left.powf(right),
-        TokenTag::EqualEqual => if left == right { 1.0 } else { 0.0 },
-        TokenTag::BangEqual => if left != right { 1.0 } else { 0.0 },
-        TokenTag::Slash => {
-            if right == 0.0 {
-                return Err(RuntimeError {
-                    msg: String::from("Division by zero"),
+        TokenTag::Plus => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Number(l + r)
+                },
+                (Value::String(r), Value::String(l)) => {
+                    return Ok(
+                        Value::String(
+                            Box::new(l.as_ref().clone() + r.as_ref())
+                        )
+                    );
+                },
+                (Value::Number(l), Value::String(r)) => {
+                    Value::String(
+                        Box::new(l.to_string() + r.as_ref())
+                    )
+                },
+                (Value::String(l), Value::Number(r)) => {
+                    Value::String(
+                        Box::new(l.as_ref().clone() + &r.to_string())
+                    )
+                },
+                _ => return Err(RuntimeError {
+                    msg: format!(
+                        "Cannot perform `{:?}`",
+                        node.op.tag,
+                    ),
                     info: node.op.info.clone()
-                })
+                }),
             }
-
-            left / right
         },
+        TokenTag::Minus => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Number(l + r)
+                },
+                _ => return Err(RuntimeError {
+                    msg: format!(
+                        "Cannot perform `{:?}`",
+                        node.op.tag,
+                    ),
+                    info: node.op.info.clone()
+                }),
+            }
+        },
+        TokenTag::Star => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Number(l + r)
+                },
+                _ => return Err(RuntimeError {
+                    msg: format!(
+                        "Cannot perform `{:?}` on operand types",
+                        node.op.tag,
+                    ),
+                    info: node.op.info.clone()
+                }),
+            }
+        },
+        TokenTag::Circ => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Number(l + r)
+                },
+                _ => return Err(RuntimeError {
+                    msg: format!(
+                        "Cannot perform `{:?}`",
+                        node.op.tag,
+                    ),
+                    info: node.op.info.clone()
+                }),
+            }
+        },
+        TokenTag::Slash => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Number(l + r)
+                },
+                _ => return Err(RuntimeError {
+                    msg: format!(
+                        "Cannot perform `{:?}`",
+                        node.op.tag,
+                    ),
+                    info: node.op.info.clone()
+                }),
+            }
+        },
+        TokenTag::EqualEqual => Value::Boolean(left == right),
+        TokenTag::BangEqual => Value::Boolean(left != right),
         _ => return Err(RuntimeError {
             msg: format!("Unknown binary operator {:?}", node.op.tag),
             info: node.op.info.clone()
@@ -49,11 +124,23 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<f64, RuntimeError> {
     Ok(val)
 }
 
-fn unary(env: &mut Env, node: &UnaryNode) -> Result<f64, RuntimeError> {
-    let left: f64 = expression(env, node.left.as_ref())?;
+fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
+    let left = expression(env, node.left.as_ref())?;
 
     match node.op.tag {
-        TokenTag::Minus => Ok(-left),
+        TokenTag::Minus => {
+            match left {
+                Value::Number(n) => Ok(Value::Number(n)),
+                _ => return Err(RuntimeError {
+                    msg: format!(
+                        "Cannot perform `{:?}` on operand type {:?}",
+                        node.op.tag,
+                        left.clone()
+                    ),
+                    info: node.op.info.clone()
+                }),
+            }
+        },
         _ => Err(RuntimeError {
             msg: format!("Invalid unary operator {:?}", node.op.tag),
             info: node.op.info.clone()
@@ -61,21 +148,46 @@ fn unary(env: &mut Env, node: &UnaryNode) -> Result<f64, RuntimeError> {
     }
 }
 
-fn primary(env: &mut Env, node: &PrimaryNode) -> Result<f64, RuntimeError> {
-    let val = match node {
-        PrimaryNode::Literal(literal) => *literal,
-        PrimaryNode::Paren(expr) => expression(env, expr)?,
+fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
+    match node {
+        PrimaryNode::Literal(literal) => {
+            let value = match literal {
+                LiteralValue::Number(n) => Value::Number(*n),
+                LiteralValue::String(str) => Value::String(Box::new(str.into())),
+            };
+
+            Ok(value)
+        },
+        PrimaryNode::Paren(expr) => return Ok(expression(env, expr)?),
         PrimaryNode::Identifier(token) => match &token.tag {
             TokenTag::Identifier(name) => match env.get(&name) {
-                Some(val) => val,
+                Some(val) => return Ok(val.clone()),
                 None => return Err(RuntimeError {
                     msg: format!("`{}` is not defined", *name),
                     info: token.info.clone()
                 })
             },
-            _ => panic!()
+            _ => unreachable!()
+        },
+        PrimaryNode::Call(token) => match &token.tag {
+            TokenTag::Identifier(name) => match env.get(&name) {
+                Some(val) => {
+                    match val {
+                        Value::Function {
+                            name: _,
+                            closure,
+                            body
+                        } => statement(&mut env.clone(), body.as_ref())?,
+                        _ => unreachable!()
+                    }
+                    return Ok(Value::Null);
+                }
+                None => return Err(RuntimeError {
+                    msg: format!("function `{}` is not defined", *name),
+                    info: token.info.clone()
+                })
+            }
+            _ => unreachable!()
         }
-    };
-
-    Ok(val)
+    }
 }

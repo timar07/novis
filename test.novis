@@ -1,7 +1,10 @@
-let a = 1+32;
-print a;
-print a+32;
+let a = 1;
 
-if a != 33 {
-    print 48;
+func test() -> {
+    print a;
+}
+
+loop a != 10 {
+    test();
+    a = a + 1;
 }

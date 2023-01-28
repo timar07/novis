@@ -1,9 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, borrow::{Borrow}};
+use super::value::Value;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Env {
-    hashmap: HashMap<String, f64>,
-    enclosing: Option<Box<Env>>
+    hashmap: HashMap<String, Value>,
+    pub enclosing: Option<Box<Env>>
 }
 
 impl Env {
@@ -14,36 +15,46 @@ impl Env {
         }
     }
 
-    pub fn local(enclosing: &mut Env) -> Env {
+    pub fn local(enclosing: Box<Env>) -> Env {
         Env {
             hashmap: HashMap::new(),
-            enclosing: Some(Box::new(enclosing.clone())),
+            enclosing: Some(enclosing)
         }
     }
 
-    pub fn define(&mut self, name: String, value: f64) {
+    pub fn set(&mut self, name: &String, value: Value) {
+        if let Some(local) = self.get_local_mut(name) {
+            *local = value;
+        } else if let Some(global) = self.enclosing.as_mut() {
+            global.set(name, value);
+        }
+    }
+
+    fn get_local_mut(&mut self, name: &String) -> Option<&mut Value> {
+        self.hashmap.get_mut(name)
+    }
+
+    pub fn get_enclosing(&mut self) -> Env {
+        self.enclosing.as_ref().unwrap().as_ref().clone()
+    }
+
+    pub fn define(&mut self, name: String, value: Value) {
         self.hashmap.insert(name, value);
     }
 
-    pub fn get(&self, name: &String) -> Option<f64> {
-        if let Some(val) = self.get_local(name) {
-            return Some(*val);
+    pub fn get(&self, name: &String) -> Option<&Value> {
+        if let Some(local) = self.get_local(name) {
+            return Some(local);
         }
 
-        let mut current_env = self.enclosing.as_ref();
-
-        while let Some(env) = current_env {
-            if let Some(value) = env.get_local(name) {
-                return Some(value.clone());
-            }
-
-            current_env = current_env.unwrap().enclosing.as_ref();
+        if let Some(global) = &self.enclosing {
+            return global.as_ref().borrow().get(name);
         }
 
         None
     }
 
-    pub fn get_local(&self, name: &String) -> Option<&f64> {
+    pub fn get_local(&self, name: &String) -> Option<&Value> {
         self.hashmap.get(name)
     }
 }

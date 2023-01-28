@@ -1,5 +1,7 @@
 use crate::lexer::token::{Token, TokenTag};
 
+use super::parse_error::ParseError;
+
 #[derive(Clone)]
 pub struct TokenStream {
     tokens: Vec<Token>,
@@ -12,12 +14,18 @@ impl TokenStream {
         TokenStream { tokens: tokens, curr: 0 }
     }
 
-    pub fn require(&mut self, tokens: &'static [TokenTag]) -> Result<(), ()> {
+    pub fn require(
+        &mut self,
+        tokens: &'static [TokenTag],
+    ) -> Result<&Token, ParseError> {
         if self.match_next(tokens) {
-            return Ok(());
+            return Ok(self.prev());
         }
 
-        Err(())
+        Err(ParseError {
+            token: self.current().clone(),
+            msg: format!("Expected `{:?}`", tokens)
+        })
     }
 
     // All the same as previous, but consumes the token
@@ -45,6 +53,10 @@ impl TokenStream {
 
     pub fn advance(&mut self) {
         self.curr += 1;
+    }
+
+    pub fn discard(&mut self) {
+        self.curr -= 1;
     }
 
     pub fn prev(&self) -> &Token {

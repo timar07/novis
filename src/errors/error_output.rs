@@ -3,10 +3,11 @@ use super::DebugInfo;
 
 pub fn print_error(name: &'static str, msg: String, info: DebugInfo) {
     println!(
-        "{}{} {} at line {} col {}",
+        "{}{} {} ({}:{}:{})",
         name.red(),
         ":".red(),
         msg,
+        info.fname,
         info.line,
         info.col
     );

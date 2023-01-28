@@ -16,7 +16,6 @@ pub fn sync(tokens: &mut TokenStream) {
             | TokenTag::Func => return (),
             _ => {
                 tokens.accept();
-                dbg!(tokens.current());
             }
         }
     }
