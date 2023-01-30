@@ -14,14 +14,14 @@ use crate::{
         Lexeme
     }
 };
-use super::lexical_error::LexicalError;
+use super::{lexical_error::LexicalError};
 
 pub struct Lexer {
     pub src: Rc<String>,
     pub curr: usize,
     pub start: usize,
-    pub col: usize,
     pub line: usize,
+    pub col: usize,
     pub fname: String,
 }
 
@@ -29,10 +29,10 @@ impl Lexer {
     pub fn from_file(path: &String) -> Lexer {
         Lexer {
             src: Rc::new(FileStream::new(path).as_str()),
-            line: 1,
-            col: 0,
             curr: 0,
             start: 0,
+            line: 1,
+            col: 0,
             fname: path.clone()
         }
     }
@@ -118,38 +118,7 @@ impl Lexer {
                 '0'..='9' => self.lex_number(),
 
                 // Identifiers and keywords
-                'A'..='Z' | 'a'..='z' | '_' => {
-                    match ch {
-                        'e' => self.lex_keyword("lse", TokenTag::Else),
-                        'f' => {
-                            match self.current() {
-                                Some('a') => self.lex_keyword("alse",TokenTag::False),
-                                Some('u') => self.lex_keyword("unc",TokenTag::Func),
-                                _ => self.lex_identifier()
-                            }
-                        }
-                        'p' => self.lex_keyword(
-                            "rint",
-                            TokenTag::Print
-                        ),
-                        'l' => {
-                            match self.current() {
-                                Some('e') => self.lex_keyword("et",TokenTag::Let),
-                                Some('o') => self.lex_keyword("oop",TokenTag::Loop),
-                                _ => self.lex_identifier()
-                            }
-                        },
-                        't' => self.lex_keyword(
-                            "rue",
-                            TokenTag::True
-                        ),
-                        'i' => self.lex_keyword(
-                            "f",
-                            TokenTag::If
-                        ),
-                        _ => self.lex_identifier()
-                    }
-                },
+                'A'..='Z' | 'a'..='z' | '_' => self.lex_keyword(),
                 _ => {
                     return Err(LexicalError {
                         token: self.create_token(TokenTag::Error),
@@ -185,17 +154,40 @@ impl Lexer {
         }
     }
 
-    fn lex_string(&mut self) -> TokenTag {
-        while self.accept().unwrap() != '"' {
-            if self.current().is_none() {
-                panic!("Unterminated string");
+    pub fn lex_keyword(&mut self) -> TokenTag {
+        match self.prev().unwrap() {
+            'e' => self.accept_keyword("lse", TokenTag::Else),
+            'f' => {
+                match self.current() {
+                    Some('a') => self.accept_keyword("alse",TokenTag::False),
+                    Some('u') => self.accept_keyword("unc",TokenTag::Func),
+                    _ => self.lex_identifier()
+                }
             }
-        };
-
-        TokenTag::String(String::from(&self.src[self.start+1..self.curr-1]))
+            'p' => self.accept_keyword(
+                "rint",
+                TokenTag::Print
+            ),
+            'l' => {
+                match self.current() {
+                    Some('e') => self.accept_keyword("et",TokenTag::Let),
+                    Some('o') => self.accept_keyword("oop",TokenTag::Loop),
+                    _ => self.lex_identifier()
+                }
+            },
+            't' => self.accept_keyword(
+                "rue",
+                TokenTag::True
+            ),
+            'i' => self.accept_keyword(
+                "f",
+                TokenTag::If
+            ),
+            _ => self.lex_identifier()
+        }
     }
 
-    fn lex_keyword(&mut self, word: &'static str, tag: TokenTag) -> TokenTag {
+    fn accept_keyword(&mut self, word: &'static str, tag: TokenTag) -> TokenTag {
         if self.match_word(word) {
             return tag;
         }
@@ -203,7 +195,7 @@ impl Lexer {
         self.lex_identifier()
     }
 
-    fn lex_identifier(&mut self) -> TokenTag {
+    pub fn lex_identifier(&mut self) -> TokenTag {
         let mut name = String::new();
         name.push(self.prev().unwrap());
 
@@ -216,6 +208,16 @@ impl Lexer {
         };
 
         TokenTag::Identifier(name)
+    }
+
+    fn lex_string(&mut self) -> TokenTag {
+        while self.accept().unwrap() != '"' {
+            if self.current().is_none() {
+                panic!("Unterminated string");
+            }
+        };
+
+        TokenTag::String(String::from(&self.src[self.start+1..self.curr-1]))
     }
 
     fn lex_number(&mut self) -> TokenTag {
@@ -257,7 +259,15 @@ impl Lexer {
         f64::from(self.accept().unwrap().to_digit(10).unwrap())
     }
 
-    fn match_word(&mut self, word: &'static str) -> bool {
+    fn is_next_identifier_char(&self, ch: char) -> bool {
+        self.is_identifier_char(ch) || ch.is_ascii_digit()
+    }
+
+    fn is_identifier_char(&self, ch: char) -> bool {
+        ch.is_ascii_alphabetic() || ch == '_'
+    }
+
+    pub fn match_word(&mut self, word: &'static str) -> bool {
         if self.check_word(word) {
             self.curr += word.len();
             self.col += word.len();
@@ -267,11 +277,11 @@ impl Lexer {
         false
     }
 
-    fn check_word(&mut self, word: &'static str) -> bool {
+    pub fn check_word(&mut self, word: &'static str) -> bool {
         &self.src[self.curr..self.curr+word.len()] == String::from(word)
     }
 
-    fn match_next(&mut self, ch: char) -> bool {
+    pub fn match_next(&mut self, ch: char) -> bool {
         let next = self.current();
         if next.is_some() && next.unwrap() == ch {
             self.accept();
@@ -281,7 +291,7 @@ impl Lexer {
         false
     }
 
-    fn accept(&mut self) -> Option<char> {
+    pub fn accept(&mut self) -> Option<char> {
         let ch = self.current();
 
         if ch.is_some() {
@@ -299,23 +309,15 @@ impl Lexer {
     }
 
     #[allow(dead_code)]
-    fn next(&self) -> Option<char> {
+    pub fn next(&self) -> Option<char> {
         self.src.chars().nth(self.curr+1)
     }
 
-    fn prev(&self) -> Option<char> {
+    pub fn prev(&self) -> Option<char> {
         self.src.chars().nth(self.curr-1)
     }
 
-    fn current(&self) -> Option<char> {
+    pub fn current(&self) -> Option<char> {
         self.src.chars().nth(self.curr)
-    }
-
-    fn is_next_identifier_char(&self, ch: char) -> bool {
-        self.is_identifier_char(ch) || ch.is_ascii_digit()
-    }
-
-    fn is_identifier_char(&self, ch: char) -> bool {
-        ch.is_ascii_alphabetic() || ch == '_'
     }
 }

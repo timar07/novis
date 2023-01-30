@@ -1,7 +1,11 @@
 let a = 1;
 
-func test() -> {
+func test(a, b, c) -> {
     print a;
+}
+
+func increment() -> {
+    a = a + 1;
 }
 
 loop a != 10 {

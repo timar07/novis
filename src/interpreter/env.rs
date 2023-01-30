@@ -1,4 +1,7 @@
-use std::{collections::HashMap, borrow::{Borrow}};
+use std::{
+    collections::HashMap,
+    borrow::{Borrow}
+};
 use super::value::Value;
 
 #[derive(Clone, Debug, PartialEq)]

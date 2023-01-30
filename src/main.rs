@@ -4,14 +4,19 @@ mod parser;
 mod interpreter;
 mod code_stream;
 
-use std::{env};
+use std::{env, process::exit};
 use interpreter::Interpreter;
 use lexer::Lexer;
 use parser::Parser;
-// use crate::errors::DescribableError;
 
 fn main() {
     let argv: Vec<String> = env::args().collect();
+
+    if argv.len() < 2 {
+        // TODO: Dialog mode
+        eprintln!("Usage: `novis <file name>`");
+        exit(1);
+    }
 
     let mut lexer = Lexer::from_file(&argv[1]);
 

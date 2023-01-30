@@ -1,5 +1,4 @@
-use std::rc::Rc;
-
+use std::{rc::Rc};
 use crate::{
     parser::ast::{
         statement::Statement,
@@ -7,7 +6,6 @@ use crate::{
     },
     interpreter::expression::expression, lexer::token::{TokenTag, Token}
 };
-
 use super::{runtime_error::RuntimeError, env::Env, value::Value};
 
 
@@ -80,8 +78,8 @@ fn func_definition(
         TokenTag::Identifier(id) => {
             if env.get_local(&id).is_none() {
                 env.define(id, Value::Function {
+                    params: params.clone(),
                     name: name.clone(),
-                    closure: env.clone(),
                     body: body.clone()
                 });
             } else {

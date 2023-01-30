@@ -1,3 +1,4 @@
+
 mod lexer;
 mod lexical_error;
 

@@ -169,22 +169,33 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
             },
             _ => unreachable!()
         },
-        PrimaryNode::Call(token) => match &token.tag {
-            TokenTag::Identifier(name) => match env.get(&name) {
+        PrimaryNode::Call {
+            name,
+            args
+        } => match &name.tag {
+            TokenTag::Identifier(s) => match env.get(&s) {
                 Some(val) => {
                     match val {
                         Value::Function {
+                            params: _,
                             name: _,
-                            closure,
                             body
-                        } => statement(&mut env.clone(), body.as_ref())?,
+                        } => {
+                            let closure = &mut env.clone();
+
+                            for _ in 0..args.len() {
+                                // closure.define(params[i].tag, expression(env, &args[i])?)
+                            }
+
+                            statement(closure, body.as_ref())?;
+                        },
                         _ => unreachable!()
                     }
                     return Ok(Value::Null);
                 }
                 None => return Err(RuntimeError {
                     msg: format!("function `{}` is not defined", *name),
-                    info: token.info.clone()
+                    info: name.info.clone()
                 })
             }
             _ => unreachable!()

@@ -189,16 +189,48 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 
 /// # Rule
 /// Function call matches following grammary:
-/// ```
-/// call = identifier '(' params ')';
+/// ```ebnf
+/// call = identifier '(' args ')';
 /// ```
 fn call(
     tokens: &mut TokenStream,
 ) -> Result<PrimaryNode, ParseError> {
     let identifier = tokens.prev().clone();
+    Ok(PrimaryNode::Call {
+        name: identifier,
+        args: parse_args(tokens)?
+    })
+}
+
+/// # Rule
+/// Arguments match following grammary:
+/// ```ebnf
+/// args = expression (',' expression)*;
+/// ```
+fn parse_args(
+    tokens: &mut TokenStream,
+) -> Result<Vec<Box<Expression>>, ParseError> {
+    let mut params = vec![];
 
     tokens.require(&[TokenTag::LeftParen])?;
-    tokens.require(&[TokenTag::RightParen])?;
 
-    Ok(PrimaryNode::Call(identifier))
+    loop {
+        match tokens.current().tag {
+            TokenTag::Identifier(_) => {
+                params.push(expression(tokens)?);
+
+                if tokens.current().tag != TokenTag::RightParen {
+                    tokens.require(&[TokenTag::Comma])?;
+                }
+            },
+            TokenTag::RightParen => {
+                tokens.accept();
+                break Ok(params);
+            },
+            _ => return Err(ParseError {
+                msg: format!("Unexpected token `{:?}`", tokens.current().tag),
+                token: tokens.current().clone()
+            })
+        };
+    }
 }

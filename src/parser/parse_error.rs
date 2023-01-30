@@ -1,6 +1,12 @@
-use crate::{lexer::token::{
-    Token
-}, errors::{DescribableError, print_error}};
+use crate::{
+    lexer::token::{
+        Token
+    },
+    errors::{
+        DescribableError,
+        print_error
+    }
+};
 
 #[derive(Debug)]
 pub struct ParseError {

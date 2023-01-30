@@ -15,7 +15,10 @@ pub enum PrimaryNode {
     Literal(LiteralValue),
     Paren(Box<Expression>),
     Identifier(Token),
-    Call(Token)
+    Call {
+        name: Token,
+        args: Vec<Box<Expression>>
+    }
 }
 
 pub struct UnaryNode {

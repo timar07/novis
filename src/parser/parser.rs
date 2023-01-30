@@ -2,7 +2,7 @@ use crate::{lexer::token::{Token, TokenTag}, errors::DescribableError};
 use super::{
     token_stream::TokenStream,
     ast::statement::Statement,
-    statement::statement, sync::sync
+    statement::statement
 };
 
 
@@ -24,7 +24,7 @@ impl Parser {
             match statement(self.tokens.as_mut()) {
                 Ok(statement) => statements.push(statement),
                 Err(error) => {
-                    sync(&mut self.tokens);
+                    self.sync();
                     errors.push(error);
                 },
             }
@@ -36,5 +36,23 @@ impl Parser {
         }
 
         Ok(statements)
+    }
+
+    pub fn sync(&mut self) {
+        while self.tokens.current().tag != TokenTag::EndOfFile {
+            if self.tokens.prev().tag == TokenTag::Semicolon {
+                return ();
+            }
+
+            match self.tokens.next().tag {
+                TokenTag::If
+                | TokenTag::Print
+                | TokenTag::Let
+                | TokenTag::Func => return (),
+                _ => {
+                    self.tokens.accept();
+                }
+            }
+        }
     }
 }

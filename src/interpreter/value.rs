@@ -1,8 +1,11 @@
-use std::rc::Rc;
-
-use crate::{parser::ast::statement::Statement, lexer::token::Token};
-
-use super::{runtime_error::RuntimeError, env::Env};
+use std::{rc::Rc};
+use crate::{
+    parser::ast::statement::Statement,
+    lexer::token::Token
+};
+use super::{
+    runtime_error::RuntimeError
+};
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -10,8 +13,8 @@ pub enum Value {
     Number(f64),
     Boolean(bool),
     Function {
+        params: Vec<Token>,
         name: Token,
-        closure: Env,
         body: Rc<Statement>,
     },
     Null,
@@ -38,13 +41,7 @@ impl Value {
                 Ok(Value::Boolean(*n != 0.0))
             },
             Value::Boolean(_) => Ok(self.clone()),
-            _ => return Err(RuntimeError {
-                msg: format!(
-                    "Cannot convert type `{:?}` to `Boolean`",
-                    self,
-                ),
-                info: todo!()
-            })
+            _ => todo!()
         }
     }
 }

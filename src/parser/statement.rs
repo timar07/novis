@@ -1,8 +1,7 @@
 use std::rc::Rc;
-
 use crate::{
     lexer::token::{
-        TokenTag
+        TokenTag, Token
     },
     parser::{
         ast::statement::Statement,
@@ -59,8 +58,6 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 /// Function definition matches following grammary:
 /// ```
 /// func = 'func' identifier (params) -> statement;
-/// params = param (',' param)*;
-/// param = identifier;
 /// ```
 fn func_definition(
     tokens: &mut TokenStream
@@ -73,25 +70,8 @@ fn func_definition(
         })
     };
 
-    tokens.require(&[TokenTag::LeftParen])?;
+    let params = parse_params(tokens)?;
 
-    let mut params = vec![];
-
-    // loop {
-    //     match tokens.current().tag {
-    //         TokenTag::Identifier(_) => params.push(tokens.accept().clone()),
-    //         TokenTag::RightParen => {
-    //             tokens.accept();
-    //             break;
-    //         },
-    //         _ => return Err(ParseError {
-    //             msg: format!("Unexpected token `{:?}`", tokens.current().tag),
-    //             token: tokens.current().clone()
-    //         })
-    //     };
-    // }
-
-    tokens.require(&[TokenTag::RightParen])?;
     tokens.require(&[TokenTag::ArrowRight])?;
 
     let body = statement(tokens)?;
@@ -101,6 +81,39 @@ fn func_definition(
         params: params,
         body: Rc::new(body)
     })
+}
+
+/// # Rule
+/// Function params matches following grammary:
+/// ```ebnf
+/// params = param (',' param)*;
+/// param = identifier;
+/// ```
+fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
+    let mut params = vec![];
+
+    tokens.require(&[TokenTag::LeftParen])?;
+
+    loop {
+        dbg!(tokens.current());
+        match tokens.current().tag {
+            TokenTag::Identifier(_) => {
+                params.push(tokens.accept().clone());
+
+                if tokens.current().tag != TokenTag::RightParen {
+                    tokens.require(&[TokenTag::Comma])?;
+                }
+            },
+            TokenTag::RightParen => {
+                tokens.accept();
+                break Ok(params);
+            },
+            _ => return Err(ParseError {
+                msg: format!("Unexpected token `{:?}`", tokens.current().tag),
+                token: tokens.current().clone()
+            })
+        };
+    }
 }
 
 /// # Rule
