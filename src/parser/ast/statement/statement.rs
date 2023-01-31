@@ -18,6 +18,7 @@ pub enum Statement {
         expr: Box<Expression>
     },
     Assignment {
+        operator: Token,
         name: Token,
         expr: Box<Expression>
     },

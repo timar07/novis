@@ -207,16 +207,23 @@ fn var_definition(
 /// # Rule
 /// Variable assignment matches following grammary:
 /// ```
-/// assign = identifier '=' expression ';';
+/// assign = identifier ('=' | '+=' | '-=' | '*=' | "/=") expression ';';
 /// ```
 fn assignment(
     tokens: &mut TokenStream,
 ) -> Result<Statement, ParseError> {
     let identifier = tokens.prev().clone();
 
-    tokens.require(&[TokenTag::Equal])?;
+    tokens.require(&[
+        TokenTag::Equal,
+        TokenTag::PlusEqual,
+        TokenTag::MinusEqual,
+        TokenTag::StarEqual,
+        TokenTag::SlashEqual
+    ])?;
 
     Ok(Statement::Assignment {
+        operator: tokens.prev().clone(),
         name: identifier,
         expr: expression(tokens)?
     })

@@ -56,8 +56,8 @@ fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         let node = Expression::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
-                left: expr?,
-                right: term(tokens)?,
+                left: term(tokens)?,
+                right: expr?,
             }
         );
 
@@ -78,8 +78,8 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         let node = Expression::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
-                left: expr?,
-                right: factor(tokens)?,
+                right: expr?,
+                left: factor(tokens)?,
             }
         );
 

@@ -1,14 +1,25 @@
 let a = 1;
+let n = 10;
 
-func test(a, b, c) -> {
-    print a;
+func test() -> {
+    let string = "";
+    let i = 0;
+    let j = 0;
+
+    loop j-a < n {
+        string = string + " ";
+        j = j + 1;
+    }
+
+    loop i < a {
+        string = string + "*";
+        i = i + 1;
+    }
+
+    print string;
 }
 
-func increment() -> {
-    a = a + 1;
-}
-
-loop a != 10 {
+loop a < n {
     test();
     a = a + 1;
 }

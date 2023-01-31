@@ -24,9 +24,10 @@ pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeErro
             body
         } => r#loop(env, condition, body),
         Statement::Assignment {
+            operator,
             name,
             expr
-         } => assignment(env, name, expr),
+         } => assignment(env, name, operator, expr),
         Statement::Group(items) => group(env, items),
         Statement::Let {
             name,
@@ -49,13 +50,19 @@ pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeErro
 fn assignment(
     env: &mut Env,
     name: &Token,
+    operator: &Token,
     expr: &Box<Expression>
 ) -> Result<(), RuntimeError> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
-            if env.get(&id).is_some() {
-                let val = expression(env, expr)?;
-                env.set(&id, val);
+            let lval = env.get(&id);
+            if lval.is_some() {
+                let rval = expression(env, expr)?;
+
+                match operator.tag {
+                    TokenTag::Equal => env.set(&id, rval),
+                    _ => unreachable!()
+                }
             } else {
                 return Err(RuntimeError {
                     msg: format!("Name `{}` is not defined", id),

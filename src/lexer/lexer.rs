@@ -70,13 +70,31 @@ impl Lexer {
                 ')' => TokenTag::RightParen,
                 '{' => TokenTag::LeftCurly,
                 '}' => TokenTag::RightCurly,
-                '+' => TokenTag::Plus,
-                '*' => TokenTag::Star,
-                '/' => TokenTag::Slash,
                 '.' => TokenTag::Dot,
                 ',' => TokenTag::Comma,
                 ';' => TokenTag::Semicolon,
                 '^' => TokenTag::Circ,
+                '+' => {
+                    if self.match_next('=') {
+                        TokenTag::PlusEqual
+                    } else {
+                        TokenTag::Plus
+                    }
+                },
+                '*' => {
+                    if self.match_next('=') {
+                        TokenTag::StarEqual
+                    } else {
+                        TokenTag::Star
+                    }
+                },
+                '/' => {
+                    if self.match_next('=') {
+                        TokenTag::SlashEqual
+                    } else {
+                        TokenTag::Slash
+                    }
+                },
                 '!' => {
                     if self.match_next('=') {
                         TokenTag::BangEqual

@@ -28,6 +28,10 @@ pub enum TokenTag {
     LeftCurly,
     RightCurly,
     // Two character long
+    PlusEqual,
+    MinusEqual,
+    StarEqual,
+    SlashEqual,
     ArrowLeft,
     ArrowRight,
     EqualEqual,

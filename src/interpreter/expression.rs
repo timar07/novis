@@ -115,6 +115,22 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
         },
         TokenTag::EqualEqual => Value::Boolean(left == right),
         TokenTag::BangEqual => Value::Boolean(left != right),
+        TokenTag::Less => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Boolean(l < r)
+                },
+                _ => panic!()
+            }
+        },
+        TokenTag::Greater => {
+            match (left, right) {
+                (Value::Number(r), Value::Number(l)) => {
+                    Value::Boolean(l > r)
+                },
+                _ => panic!()
+            }
+        },
         _ => return Err(RuntimeError {
             msg: format!("Unknown binary operator {:?}", node.op.tag),
             info: node.op.info.clone()
