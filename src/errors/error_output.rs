@@ -1,20 +1,6 @@
 use colored::*;
 use super::DebugInfo;
 
-pub fn print_error(name: &'static str, msg: String, info: DebugInfo) {
-    eprintln!(
-        "{}{} {} ({}:{}:{})",
-        name.red(),
-        ":".red(),
-        msg,
-        info.fname,
-        info.line,
-        info.col
-    );
-
-    print_snippet(info);
-}
-
 // TODO: Implement
 #[allow(dead_code)]
 fn print_multiline_snippet(_: DebugInfo) {

@@ -1,5 +1,7 @@
 use std::{rc::Rc};
 
+use colored::Colorize;
+
 #[derive(Debug, Clone)]
 pub struct DebugInfo {
     pub fname: String,
@@ -10,5 +12,13 @@ pub struct DebugInfo {
 }
 
 pub trait DescribableError {
-    fn print(&self) -> ();
+    fn message(&self) -> String;
+    fn kind(&self) -> String;
+    fn print(&self) {
+        eprintln!(
+            "{}: {}",
+            self.kind().red(),
+            self.message()
+        )
+    }
 }

@@ -31,7 +31,9 @@ impl Parser {
         };
 
         if !errors.is_empty() {
-            for error in errors { error.print() };
+            for error in errors {
+                error.print()
+            };
             return Err(())
         }
 
@@ -44,7 +46,7 @@ impl Parser {
                 return ();
             }
 
-            match self.tokens.next().tag {
+            match self.tokens.lookahead(1).tag {
                 TokenTag::If
                 | TokenTag::Print
                 | TokenTag::Let

@@ -1,5 +1,4 @@
 use std::rc::Rc;
-use colored::Colorize;
 use crate::{
     code_stream::{
         FileStream
@@ -51,7 +50,6 @@ impl Lexer {
                     }
                  }
                 Err(error) => {
-                    tokens.push(error.token.clone());
                     error.print()
                 }
             }
@@ -138,12 +136,9 @@ impl Lexer {
                 // Identifiers and keywords
                 'A'..='Z' | 'a'..='z' | '_' => self.lex_keyword(),
                 _ => {
-                    return Err(LexicalError {
+                    return Err(LexicalError::UnknownToken {
+                        lexeme: ch,
                         token: self.create_token(TokenTag::Error),
-                        msg: format!(
-                            "Unexpected token '{}'",
-                            String::from(ch).underline()
-                        )
                     })
                 }
             };

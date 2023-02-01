@@ -8,7 +8,10 @@ use super::{
         UnaryNode,
         BinaryNode, LiteralValue,
     },
-    parse_error::ParseError,
+    parse_error::ParseError::{
+        self,
+        *
+    },
     token_stream::TokenStream
 };
 
@@ -101,8 +104,8 @@ fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         let node = Expression::Binary (
             BinaryNode {
                 op: tokens.prev().clone(),
-                left: expr?,
-                right: exponent(tokens)?,
+                left: exponent(tokens)?,
+                right: expr?,
             }
         );
 
@@ -172,14 +175,10 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         },
         LeftParen => {
             let node = PrimaryNode::Paren(expression(tokens)?);
-            tokens
-                .require(&[RightParen])
-                .expect("Expected ')'");
-
+            tokens.require(&[RightParen])?;
             node
         },
-        _ => return Err(ParseError {
-            msg: "Expected expression".into(),
+        _ => return Err(ExpectedExpression {
             token: tokens.prev().clone()
         })
     };
@@ -227,8 +226,7 @@ fn parse_args(
                 tokens.accept();
                 break Ok(params);
             },
-            _ => return Err(ParseError {
-                msg: format!("Unexpected token `{:?}`", tokens.current().tag),
+            _ => return Err(UnexpectedToken {
                 token: tokens.current().clone()
             })
         };

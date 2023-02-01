@@ -6,7 +6,14 @@ use crate::{
     },
     interpreter::expression::expression, lexer::token::{TokenTag, Token}
 };
-use super::{runtime_error::RuntimeError, env::Env, value::Value};
+use super::{
+    runtime_error::RuntimeError::{
+        self,
+        *
+    },
+    env::Env,
+    value::Value
+};
 
 
 pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeError> {
@@ -64,10 +71,7 @@ fn assignment(
                     _ => unreachable!()
                 }
             } else {
-                return Err(RuntimeError {
-                    msg: format!("Name `{}` is not defined", id),
-                    info: name.info.clone(),
-                })
+                return Err(NameNotDefined { name: id })
             }
         }
         _ => unreachable!()
@@ -90,10 +94,7 @@ fn func_definition(
                     body: body.clone()
                 });
             } else {
-                return Err(RuntimeError {
-                    msg: format!("Function `{}` is already defined", id),
-                    info: name.info.clone(),
-                })
+                return Err(FunctionRedefinition { name: id })
             }
         }
         _ => unreachable!()
@@ -112,10 +113,7 @@ fn var_definition(
                 let val = expression(env, expr)?;
                 env.define(id, val);
             } else {
-                return Err(RuntimeError {
-                    msg: format!("Name `{}` is already defined", id),
-                    info: name.info.clone(),
-                })
+                return Err(NameRedefinition { name: id })
             }
         }
         _ => unreachable!()
@@ -163,8 +161,7 @@ fn group(env: &mut Env, items: &Vec<Statement>) -> Result<(), RuntimeError> {
         statement(new_env.as_mut(), item)?;
     };
 
-    // leave environment
-    *env = new_env.get_enclosing();
+    env.leave();
 
     Ok(())
 }

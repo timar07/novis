@@ -1,5 +1,5 @@
 use std::process;
-use crate::parser::ast::statement::Statement;
+use crate::{parser::ast::statement::Statement, errors::DescribableError};
 use super::{
     statement::statement, env::Env
 };

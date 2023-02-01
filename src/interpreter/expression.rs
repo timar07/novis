@@ -4,12 +4,19 @@ use crate::{
         Expression,
         BinaryNode,
         UnaryNode,
-        PrimaryNode, LiteralValue
+        PrimaryNode,
+        LiteralValue
     },
     lexer::token::TokenTag
 };
-
-use super::{runtime_error::RuntimeError, value::Value, statement::statement};
+use super::{
+    runtime_error::RuntimeError::{
+        self,
+        *
+    },
+    value::Value,
+    statement::statement
+};
 
 type ExpressionValue = Result<Value, RuntimeError>;
 
@@ -48,12 +55,8 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                         Box::new(l.as_ref().clone() + &r.to_string())
                     )
                 },
-                _ => return Err(RuntimeError {
-                    msg: format!(
-                        "Cannot perform `{:?}`",
-                        node.op.tag,
-                    ),
-                    info: node.op.info.clone()
+                _ => return Err(IncompatibleOperands {
+                    op: node.op.clone()
                 }),
             }
         },
@@ -62,12 +65,8 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                 (Value::Number(r), Value::Number(l)) => {
                     Value::Number(l + r)
                 },
-                _ => return Err(RuntimeError {
-                    msg: format!(
-                        "Cannot perform `{:?}`",
-                        node.op.tag,
-                    ),
-                    info: node.op.info.clone()
+                _ => return Err(IncompatibleOperands {
+                    op: node.op.clone()
                 }),
             }
         },
@@ -76,12 +75,8 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                 (Value::Number(r), Value::Number(l)) => {
                     Value::Number(l + r)
                 },
-                _ => return Err(RuntimeError {
-                    msg: format!(
-                        "Cannot perform `{:?}` on operand types",
-                        node.op.tag,
-                    ),
-                    info: node.op.info.clone()
+                _ => return Err(IncompatibleOperands {
+                    op: node.op.clone()
                 }),
             }
         },
@@ -90,26 +85,22 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                 (Value::Number(r), Value::Number(l)) => {
                     Value::Number(l + r)
                 },
-                _ => return Err(RuntimeError {
-                    msg: format!(
-                        "Cannot perform `{:?}`",
-                        node.op.tag,
-                    ),
-                    info: node.op.info.clone()
+                _ => return Err(IncompatibleOperands {
+                    op: node.op.clone()
                 }),
             }
         },
         TokenTag::Slash => {
             match (left, right) {
                 (Value::Number(r), Value::Number(l)) => {
-                    Value::Number(l + r)
+                    if r != 0.0 {
+                        Value::Number(l + r)
+                    } else {
+                        return Err(DivisionByZero)
+                    }
                 },
-                _ => return Err(RuntimeError {
-                    msg: format!(
-                        "Cannot perform `{:?}`",
-                        node.op.tag,
-                    ),
-                    info: node.op.info.clone()
+                _ => return Err(IncompatibleOperands {
+                    op: node.op.clone()
                 }),
             }
         },
@@ -131,10 +122,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                 _ => panic!()
             }
         },
-        _ => return Err(RuntimeError {
-            msg: format!("Unknown binary operator {:?}", node.op.tag),
-            info: node.op.info.clone()
-        })
+        _ => unreachable!()
     };
 
     Ok(val)
@@ -147,20 +135,12 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
         TokenTag::Minus => {
             match left {
                 Value::Number(n) => Ok(Value::Number(n)),
-                _ => return Err(RuntimeError {
-                    msg: format!(
-                        "Cannot perform `{:?}` on operand type {:?}",
-                        node.op.tag,
-                        left.clone()
-                    ),
-                    info: node.op.info.clone()
+                _ => return Err(IncompatibleOperands {
+                    op: node.op.clone()
                 }),
             }
         },
-        _ => Err(RuntimeError {
-            msg: format!("Invalid unary operator {:?}", node.op.tag),
-            info: node.op.info.clone()
-        })
+        _ => unreachable!()
     }
 }
 
@@ -178,9 +158,8 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
         PrimaryNode::Identifier(token) => match &token.tag {
             TokenTag::Identifier(name) => match env.get(&name) {
                 Some(val) => return Ok(val.clone()),
-                None => return Err(RuntimeError {
-                    msg: format!("`{}` is not defined", *name),
-                    info: token.info.clone()
+                None => return Err(NameNotDefined {
+                    name: name.clone()
                 })
             },
             _ => unreachable!()
@@ -209,9 +188,8 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
                     }
                     return Ok(Value::Null);
                 }
-                None => return Err(RuntimeError {
-                    msg: format!("function `{}` is not defined", *name),
-                    info: name.info.clone()
+                None => return Err(FunctionNotDefined {
+                    name: name.to_string()
                 })
             }
             _ => unreachable!()

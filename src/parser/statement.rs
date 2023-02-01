@@ -45,9 +45,8 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
                 return stmt;
             }
 
-            Err(ParseError {
+            Err(ParseError::ExpectedSemicolon {
                 token: tokens.current().clone(),
-                msg: "Expected semicolon after statement".into()
             })
         },
         _ => stmt
@@ -64,9 +63,8 @@ fn func_definition(
 ) -> Result<Statement, ParseError> {
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
-        _ => return Err(ParseError {
+        _ => return Err(ParseError::ExpectedIdentifier {
             token: tokens.current().clone(),
-            msg: "Expected identifier".to_string()
         })
     };
 
@@ -95,7 +93,6 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
     tokens.require(&[TokenTag::LeftParen])?;
 
     loop {
-        dbg!(tokens.current());
         match tokens.current().tag {
             TokenTag::Identifier(_) => {
                 params.push(tokens.accept().clone());
@@ -108,8 +105,7 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
                 tokens.accept();
                 break Ok(params);
             },
-            _ => return Err(ParseError {
-                msg: format!("Unexpected token `{:?}`", tokens.current().tag),
+            _ => return Err(ParseError::UnexpectedToken {
                 token: tokens.current().clone()
             })
         };
@@ -190,9 +186,8 @@ fn var_definition(
 ) -> Result<Statement, ParseError> {
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
-        _ => return Err(ParseError {
-            token: tokens.current().clone(),
-            msg: "Expected identifier name after `let` keyword".to_string()
+        _ => return Err(ParseError::ExpectedIdentifier {
+            token: tokens.current().clone()
         })
     };
 

@@ -5,23 +5,41 @@ use std::{
 use super::value::Value;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Env {
+pub struct EnvInner {
     hashmap: HashMap<String, Value>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Env {
+    pub inner: Box<EnvInner>,
     pub enclosing: Option<Box<Env>>
 }
 
 impl Env {
     pub fn global() -> Env {
         Env {
-            hashmap: HashMap::new(),
+            inner: Box::new(EnvInner {
+                hashmap: HashMap::new(),
+            }),
             enclosing: None
         }
     }
 
     pub fn local(enclosing: Box<Env>) -> Env {
         Env {
-            hashmap: HashMap::new(),
+            inner: Box::new(EnvInner {
+                hashmap: HashMap::new(),
+            }),
             enclosing: Some(enclosing)
+        }
+    }
+
+    pub fn leave(&mut self) {
+        if let Some(global) = self.enclosing.as_deref_mut() {
+            *global = Env {
+                inner: self.inner.clone(),
+                enclosing: None
+            };
         }
     }
 
@@ -34,15 +52,11 @@ impl Env {
     }
 
     fn get_local_mut(&mut self, name: &String) -> Option<&mut Value> {
-        self.hashmap.get_mut(name)
-    }
-
-    pub fn get_enclosing(&mut self) -> Env {
-        self.enclosing.as_ref().unwrap().as_ref().clone()
+        self.inner.as_mut().hashmap.get_mut(name)
     }
 
     pub fn define(&mut self, name: String, value: Value) {
-        self.hashmap.insert(name, value);
+        self.inner.as_mut().hashmap.insert(name, value);
     }
 
     pub fn get(&self, name: &String) -> Option<&Value> {
@@ -58,6 +72,6 @@ impl Env {
     }
 
     pub fn get_local(&self, name: &String) -> Option<&Value> {
-        self.hashmap.get(name)
+        self.inner.as_ref().hashmap.get(name)
     }
 }
