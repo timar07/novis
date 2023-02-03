@@ -161,7 +161,7 @@ fn group(env: &mut Env, items: &Vec<Statement>) -> Result<(), RuntimeError> {
         statement(new_env.as_mut(), item)?;
     };
 
-    env.leave();
+    *env = new_env.enclosing.unwrap().as_mut().clone();
 
     Ok(())
 }

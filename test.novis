@@ -3,8 +3,13 @@ let n = 10;
 
 print a;
 
-{
+func increment() -> {
     a = a + 1;
 }
 
-print a;
+loop a < n {
+    increment();
+    print a;
+}
+
+

@@ -176,13 +176,16 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
                             name: _,
                             body
                         } => {
-                            let closure = &mut env.clone();
+                            let mut closure = Env::local(
+                                Box::new(env.to_owned())
+                            );
 
                             for _ in 0..args.len() {
                                 // closure.define(params[i].tag, expression(env, &args[i])?)
                             }
 
-                            statement(closure, body.as_ref())?;
+                            statement(&mut closure, body.as_ref())?;
+                            *env = closure.enclosing.unwrap().as_mut().clone();
                         },
                         _ => unreachable!()
                     }
