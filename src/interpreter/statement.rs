@@ -67,7 +67,7 @@ fn assignment(
                 let rval = expression(env, expr)?;
 
                 match operator.tag {
-                    TokenTag::Equal => env.set(&id, rval),
+                    TokenTag::Equal => env.set(&id, rval)?,
                     _ => unreachable!()
                 }
             } else {
@@ -87,15 +87,11 @@ fn func_definition(
 ) -> Result<(), RuntimeError> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
-            if env.get_local(&id).is_none() {
-                env.define(id, Value::Function {
-                    params: params.clone(),
-                    name: name.clone(),
-                    body: body.clone()
-                });
-            } else {
-                return Err(FunctionRedefinition { name: id })
-            }
+            env.define(&id, Value::Function {
+                params: params.clone(),
+                name: name.clone(),
+                body: body.clone()
+            })?;
         }
         _ => unreachable!()
     };
@@ -109,12 +105,8 @@ fn var_definition(
 ) -> Result<(), RuntimeError> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
-            if env.get_local(&id).is_none() {
-                let val = expression(env, expr)?;
-                env.define(id, val);
-            } else {
-                return Err(NameRedefinition { name: id })
-            }
+            let val = expression(env, expr)?;
+            env.define(&id, val)?;
         }
         _ => unreachable!()
     };
@@ -151,17 +143,13 @@ fn cond(
 }
 
 fn group(env: &mut Env, items: &Vec<Statement>) -> Result<(), RuntimeError> {
-    let mut new_env = Box::new(
-        Env::local(
-            Box::new(env.to_owned())
-        )
-    );
+    let mut new_env = env.enter();
 
     for item in items {
-        statement(new_env.as_mut(), item)?;
+        statement(new_env, item)?;
     };
 
-    *env = new_env.enclosing.unwrap().as_mut().clone();
+    new_env.leave();
 
     Ok(())
 }
