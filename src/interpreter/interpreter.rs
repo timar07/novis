@@ -14,7 +14,7 @@ impl Interpreter {
     }
 
     pub fn interpret(&self) -> () {
-        let mut global_env = Box::new(Env::global());
+        let mut global_env = Box::new(Env::new());
 
         for stmt in &self.statements {
             if let Err(error) = statement(global_env.as_mut(), stmt) {

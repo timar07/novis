@@ -176,15 +176,17 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
                             name: _,
                             body
                         } => {
-                            // let mut closure = env.enter();
+                            let mut new_env = env.to_owned();
+                            let mut closure = new_env.enter();
 
-                            // for _ in 0..args.len() {
-                            //     // closure.define(params[i].tag, expression(env, &args[i])?)
-                            // }
+                            for _ in 0..args.len() {
+                                // closure.define(params[i].tag, expression(env, &args[i])?)
+                            }
 
-                            // statement(&mut env, body.as_ref())?;
+                            statement(&mut closure, body.as_ref())?;
 
-                            // env.leave();
+                            new_env.leave();
+                            *env = new_env;
                         },
                         _ => unreachable!()
                     }

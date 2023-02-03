@@ -4,44 +4,13 @@ use std::{
 use super::{value::Value, runtime_error::RuntimeError};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct EnvInner {
-    hashmap: HashMap<String, Value>,
-}
-
-impl EnvInner {
-    pub fn get(&self, name: &String) -> Option<&Value> {
-        self.hashmap.get(name)
-    }
-
-    pub fn set(&mut self, name: &String, value: Value) -> Result<(), RuntimeError> {
-        if let Some(reference) = self.hashmap.get_mut(name) {
-            *reference = value;
-            Ok(())
-        } else {
-            Err(RuntimeError::NameNotDefined {
-                name: name.to_string()
-            })
-        }
-    }
-
-    pub fn define(&mut self, name: &String, value: Value) -> Result<(), RuntimeError> {
-        self.hashmap.insert(name.into(), value);
-        Ok(())
-    }
-
-    pub fn get_mut(&mut self, name: &String) -> Option<&mut Value> {
-        self.hashmap.get_mut(name)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub struct Env {
     pub inner: Vec<EnvInner>,
     pub level: usize
 }
 
 impl Env {
-    pub fn global() -> Self {
+    pub fn new() -> Self {
         Self {
             inner: vec![EnvInner {
                 hashmap: HashMap::new(),
@@ -66,24 +35,29 @@ impl Env {
     }
 
     pub fn set(&mut self, name: &String, value: Value) -> Result<(), RuntimeError> {
-        if let Some(local) = self.get_current_mut().get_mut(name) {
-            *local = value;
-        } else if let Some(global) = self.get_enclosing_mut() {
-            global.set(name, value)?;
+        let mut level = (self.inner.len() as i32) -1;
+
+        while level >= 0 {
+            if let Some(local) = self.inner[level as usize].get_mut(name) {
+                *local = value.clone();
+            }
+
+            level -= 1;
         }
 
         Ok(())
     }
 
     pub fn get(&self, name: &String) -> Option<&Value> {
-        let mut level = (self.inner.len() as i32) -1;
+        let mut env_iter = self.inner.iter().rev();
+        let mut current = env_iter.next();
 
-        while level >= 0 {
-            if let Some(local) = self.inner[level as usize].get(name) {
-                return Some(local);
+        while current.is_some() {
+            if let Some(value) = current.unwrap().get(name) {
+                return Some(value);
             }
 
-            level -= 1;
+            current = env_iter.next();
         }
 
         None
@@ -101,12 +75,24 @@ impl Env {
     fn get_current(&self) -> &EnvInner {
         self.inner.get(self.level).unwrap()
     }
+}
 
-    fn get_enclosing_mut(&mut self) -> Option<&mut EnvInner> {
-        self.inner.iter_mut().nth(self.level-1)
+#[derive(Clone, Debug, PartialEq)]
+pub struct EnvInner {
+    hashmap: HashMap<String, Value>,
+}
+
+impl EnvInner {
+    pub fn get(&self, name: &String) -> Option<&Value> {
+        self.hashmap.get(name)
     }
 
-    fn get_enclosing(&self) -> Option<&EnvInner> {
-        self.inner.iter().nth(self.level-1)
+    pub fn define(&mut self, name: &String, value: Value) -> Result<(), RuntimeError> {
+        self.hashmap.insert(name.into(), value);
+        Ok(())
+    }
+
+    pub fn get_mut(&mut self, name: &String) -> Option<&mut Value> {
+        self.hashmap.get_mut(name)
     }
 }
