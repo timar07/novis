@@ -36,6 +36,7 @@ impl Lexer {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_string(string: String) -> Self {
         Self {
             src: Rc::new(string),
@@ -116,6 +117,9 @@ impl Lexer {
                         TokenTag::ArrowRight
                     } else if self.match_next('=') {
                         TokenTag::MinusEqual
+                    } else if self.match_next('-') {
+                        self.skip_line();
+                        return self.lex_token()
                     } else {
                         TokenTag::Minus
                     }
@@ -336,6 +340,12 @@ impl Lexer {
         }
 
         return ch;
+    }
+
+    pub fn skip_line(&mut self) {
+        while self.current() != Some('\n') && self.current().is_some() {
+            self.accept();
+        }
     }
 
     #[allow(dead_code)]

@@ -19,13 +19,14 @@ pub enum RuntimeError {
         op: Token,
     },
     DivisionByZero,
-
+    ReturnOutOfFunction,
     FunctionNotDefined {
         name: String
     },
     NameNotDefined {
         name: String
     },
+    #[allow(dead_code)]
     FunctionRedefinition {
         name: String
     },
@@ -43,6 +44,9 @@ impl DescribableError for RuntimeError {
         match self {
             RuntimeError::DivisionByZero => {
                 format!("Division by zero")
+            },
+            RuntimeError::ReturnOutOfFunction => {
+                format!("Cannot return value outside of the function")
             },
             RuntimeError::FunctionNotDefined { name } => {
                 format!("Function `{}` not defined", name)

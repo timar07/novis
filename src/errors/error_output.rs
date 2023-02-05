@@ -7,6 +7,7 @@ fn print_multiline_snippet(_: DebugInfo) {
 
 }
 
+#[allow(dead_code)]
 fn print_snippet(info: DebugInfo) {
     let snippet_prefix = format!("    {} | ", info.line)
         .bright_black();

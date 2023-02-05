@@ -7,7 +7,7 @@ use crate::{
         PrimaryNode,
         LiteralValue
     },
-    lexer::token::TokenTag
+    lexer::token::{TokenTag, Token}
 };
 use super::{
     runtime_error::InterpreterException::{
@@ -15,11 +15,10 @@ use super::{
         *
     },
     runtime_error::RuntimeError::{
-        self,
-        *
+        *,
     },
     value::Value,
-    statement::statement
+    statement::statement,
 };
 
 type ExpressionValue = Result<Value, InterpreterException>;
@@ -32,6 +31,7 @@ pub fn expression(env: &mut Env, ast: &Expression) -> ExpressionValue {
     }
 }
 
+/// Evaluate binary expression
 fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterException> {
     let left = expression(env, node.left.as_ref())?;
     let right = expression(env, node.right.as_ref())?;
@@ -76,8 +76,8 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
         },
         TokenTag::Star => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
-                    Value::Number(l + r)
+                (Value::Number(l), Value::Number(r)) => {
+                    Value::Number(l * r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
@@ -86,8 +86,8 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
         },
         TokenTag::Circ => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
-                    Value::Number(l + r)
+                (Value::Number(l), Value::Number(r)) => {
+                    Value::Number(l.powf(r))
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
@@ -98,7 +98,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
             match (left, right) {
                 (Value::Number(l), Value::Number(r)) => {
                     if r != 0.0 {
-                        Value::Number(l + r)
+                        Value::Number(l / r)
                     } else {
                         return Err(Fatal(DivisionByZero))
                     }
@@ -156,13 +156,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
     Ok(val)
 }
 
+/// Evaluate unary expression
 fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
     let left = expression(env, node.left.as_ref())?;
 
     match node.op.tag {
         TokenTag::Minus => {
             match left {
-                Value::Number(n) => Ok(Value::Number(n)),
+                Value::Number(n) => Ok(Value::Number(-n)),
                 _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
                 })),
@@ -172,76 +173,92 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
     }
 }
 
+/// Evaluate primary expression
 fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
     match node {
-        PrimaryNode::Literal(literal) => {
-            let value = match literal {
-                LiteralValue::Number(n) => Value::Number(*n),
-                LiteralValue::String(str) => Value::String(Box::new(str.into())),
-            };
-
-            Ok(value)
-        },
-        PrimaryNode::Paren(expr) => return Ok(expression(env, expr)?),
-        PrimaryNode::Identifier(token) => match &token.tag {
-            TokenTag::Identifier(name) => match env.get(&name) {
-                Some(val) => return Ok(val.clone()),
-                None => return Err(Fatal(NameNotDefined {
-                    name: name.clone()
-                }))
-            },
-            _ => unreachable!()
-        },
+        PrimaryNode::Literal(value) => literal(value),
+        PrimaryNode::Paren(expr) => paren(env, expr),
+        PrimaryNode::Identifier(token) => identifier(env, token),
         PrimaryNode::Call {
             name,
             args
-        } => match &name.tag {
-            TokenTag::Identifier(s) => match env.get(&s) {
-                Some(val) => {
-                    match val {
-                        Value::Function {
-                            params,
-                            name: _,
-                            body
-                        } => {
-                            let mut global_env = env.to_owned();
-                            let closure = &mut global_env.enter();
+        } => call(name, env, args),
+    }
+}
 
-                            for i in 0..params.len() {
-                                match &params[i].tag {
-                                    TokenTag::Identifier(name) => {
-                                        closure.define(
-                                            &name,
-                                            expression(&mut env.to_owned(), &args[i])?
-                                        );
-                                    },
-                                    _ => unreachable!()
-                                }
-                            }
+/// Evaluate function call
+fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Value, InterpreterException> {
+    match &name.tag {
+        TokenTag::Identifier(s) => match env.get(&s) {
+            Some(Value::Function {
+                params,
+                name:_,
+                body
+            }) => {
+                let mut global_env = env.to_owned();
+                let closure = &mut global_env.enter();
 
-                            match statement(closure, body.as_ref()) {
-                                Err(exception) => {
-                                    match exception {
-                                        InterpreterException::Return(value) => {
-                                            closure.leave();
-                                            *env = global_env;
-                                            return Ok(value);
-                                        },
-                                        _ => panic!()
-                                    }
-                                }
-                                Ok(_) => todo!(),
+                for i in 0..params.len() {
+                    match &params[i].tag {
+                        TokenTag::Identifier(name) => {
+                            let definition_result = closure.define(
+                                &name,
+                                expression(&mut env.to_owned(), &args[i])?
+                            );
+
+                            match definition_result {
+                                Err(err) => {
+                                    return Err(InterpreterException::Fatal(err))
+                                },
+                                _ => {}
                             }
                         },
                         _ => unreachable!()
                     }
-                    return Ok(Value::Null);
                 }
-                None => return Err(Fatal(FunctionNotDefined {
-                    name: name.to_string()
-                }))
+
+                match statement(closure, body.as_ref()) {
+                    Err(InterpreterException::Return(value)) => {
+                        closure.leave();
+                        *env = global_env;
+                        return Ok(value);
+                    }
+                    _ => { Ok(Value::Null) }
+                }
             }
-            _ => unreachable!()
+            Some(_) => unreachable!(),
+            None => return Err(Fatal(FunctionNotDefined {
+                name: name.to_string()
+            }))
         }
+        _ => unreachable!()
     }
+}
+
+/// Evaluate identifier
+fn identifier(env: &mut Env, token: &Token) -> Result<Value, InterpreterException> {
+    match &token.tag {
+        TokenTag::Identifier(name) => match env.get(&name) {
+            Some(val) => return Ok(val.clone()),
+            None => return Err(Fatal(NameNotDefined {
+                name: name.clone()
+            }))
+        },
+        _ => unreachable!()
+    }
+}
+
+/// Evaluate literal value
+fn literal(lit_value: &LiteralValue) -> ExpressionValue {
+    let value = match lit_value {
+        LiteralValue::Number(n) => Value::Number(*n),
+        LiteralValue::String(str) => Value::String(Box::new(str.into())),
+    };
+
+    Ok(value)
+}
+
+/// Evaluate parenthesized expression
+fn paren(env: &mut Env, expr: &Box<Expression>) -> ExpressionValue {
+    Ok(expression(env, expr)?)
 }
