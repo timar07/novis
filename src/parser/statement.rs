@@ -27,6 +27,7 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         TokenTag::LeftCurly => group(tokens),
         TokenTag::Let => var_definition(tokens),
         TokenTag::Func => func_definition(tokens),
+        TokenTag::Return => r#return(tokens),
         _ => {
             if tokens.current().tag == TokenTag::LeftParen {
                 tokens.discard(); // push token back
@@ -113,6 +114,17 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
 }
 
 /// # Rule
+/// Return statement matches following grammary:
+/// ```
+/// return = 'return' expression;
+/// ```
+fn r#return(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
+    Ok(Statement::Return {
+        expr: expression(tokens)?
+    })
+}
+
+/// # Rule
 /// Loop statement matches following grammary:
 /// ```
 /// loop = 'loop' expression group;
@@ -179,7 +191,7 @@ fn print(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 /// # Rule
 /// Variable definition matches following grammary:
 /// ```
-/// define = 'let' identifier '=' expression ';';
+/// define = 'let' identifier '<-' expression ';';
 /// ```
 fn var_definition(
     tokens: &mut TokenStream
@@ -191,7 +203,7 @@ fn var_definition(
         })
     };
 
-    tokens.require(&[TokenTag::Equal])?;
+    tokens.require(&[TokenTag::ArrowLeft])?;
 
     Ok(Statement::Let {
         name: identifier,

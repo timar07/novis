@@ -25,14 +25,25 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn from_file(path: &String) -> Lexer {
-        Lexer {
+    pub fn from_file(path: &String) -> Self {
+        Self {
             src: Rc::new(FileStream::new(path).as_str()),
             curr: 0,
             start: 0,
             line: 1,
             col: 0,
             fname: path.clone()
+        }
+    }
+
+    pub fn from_string(string: String) -> Self {
+        Self {
+            src: Rc::new(string),
+            curr: 0,
+            start: 0,
+            line: 1,
+            col: 0,
+            fname: "unnamed".into()
         }
     }
 
@@ -103,6 +114,8 @@ impl Lexer {
                 '-' => {
                     if self.match_next('>') {
                         TokenTag::ArrowRight
+                    } else if self.match_next('=') {
+                        TokenTag::MinusEqual
                     } else {
                         TokenTag::Minus
                     }
@@ -195,6 +208,10 @@ impl Lexer {
             'i' => self.accept_keyword(
                 "f",
                 TokenTag::If
+            ),
+            'r' => self.accept_keyword(
+                "eturn",
+                TokenTag::Return
             ),
             _ => self.lex_identifier()
         }

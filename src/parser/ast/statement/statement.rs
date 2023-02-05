@@ -13,6 +13,9 @@ pub enum Statement {
     Print {
         expr: Box<Expression>,
     },
+    Return {
+        expr: Box<Expression>,
+    },
     Let {
         name: Token,
         expr: Box<Expression>

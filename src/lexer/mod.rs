@@ -1,4 +1,4 @@
-
+mod tests;
 mod lexer;
 mod lexical_error;
 

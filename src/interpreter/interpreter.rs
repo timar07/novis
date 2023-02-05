@@ -1,7 +1,7 @@
 use std::process;
 use crate::{parser::ast::statement::Statement, errors::DescribableError};
 use super::{
-    statement::statement, env::Env
+    statement::statement, env::Env, runtime_error::InterpreterException
 };
 
 pub struct Interpreter {
@@ -18,8 +18,13 @@ impl Interpreter {
 
         for stmt in &self.statements {
             if let Err(error) = statement(global_env.as_mut(), stmt) {
-                error.print();
-                process::exit(1);
+                match error {
+                    InterpreterException::Fatal(fatal) => {
+                        fatal.print();
+                        process::exit(1)
+                    },
+                    _ => todo!()
+                }
             };
         };
     }

@@ -7,16 +7,19 @@ use crate::{
     interpreter::expression::expression, lexer::token::{TokenTag, Token}
 };
 use super::{
-    runtime_error::RuntimeError::{
+    runtime_error::InterpreterException::{
         self,
         *
     },
+    runtime_error::RuntimeError::{
+        *
+    },
     env::Env,
-    value::Value
+    value::Value, utils::check_condition
 };
 
 
-pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeError> {
+pub fn statement(env: &mut Env, statement: &Statement) -> Result<Value, InterpreterException> {
     match statement {
         Statement::Print {
             expr,
@@ -45,9 +48,12 @@ pub fn statement(env: &mut Env, statement: &Statement) -> Result<(), RuntimeErro
             params,
             body
         } => func_definition(env, name, params, body),
+        Statement::Return {
+            expr
+        } => r#return(env, expr),
         Statement::Expression { expr } => {
             match expression(env, expr) {
-                Ok(_) => Ok(()),
+                Ok(_) => Ok(Value::Null),
                 Err(error) => Err(error),
             }
         }
@@ -59,7 +65,7 @@ fn assignment(
     name: &Token,
     operator: &Token,
     expr: &Box<Expression>
-) -> Result<(), RuntimeError> {
+) -> Result<Value, InterpreterException> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
             let lval = env.get(&id);
@@ -67,16 +73,16 @@ fn assignment(
                 let rval = expression(env, expr)?;
 
                 match operator.tag {
-                    TokenTag::Equal => env.set(&id, rval)?,
+                    TokenTag::Equal => env.set(&id, rval).unwrap(),
                     _ => unreachable!()
                 }
             } else {
-                return Err(NameNotDefined { name: id })
+                return Err(Fatal(NameNotDefined { name: id }))
             }
         }
         _ => unreachable!()
     };
-    Ok(())
+    Ok(Value::Null)
 }
 
 fn func_definition(
@@ -84,45 +90,52 @@ fn func_definition(
     name: &Token,
     params: &Vec<Token>,
     body: &Rc<Statement>
-) -> Result<(), RuntimeError> {
+) -> Result<Value, InterpreterException> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
             env.define(&id, Value::Function {
                 params: params.clone(),
                 name: name.clone(),
                 body: body.clone()
-            })?;
+            }).unwrap();
         }
         _ => unreachable!()
     };
-    Ok(())
+    Ok(Value::Null)
+}
+
+fn r#return(
+    env: &mut Env,
+    expr: &Box<Expression>,
+) -> Result<Value, InterpreterException> {
+    Err(Return(expression(env, expr)?))
 }
 
 fn var_definition(
     env: &mut Env,
     name: &Token,
     expr: &Box<Expression>
-) -> Result<(), RuntimeError> {
+) -> Result<Value, InterpreterException> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
             let val = expression(env, expr)?;
-            env.define(&id, val)?;
+            env.define(&id, val).unwrap();
         }
         _ => unreachable!()
     };
-    Ok(())
+    Ok(Value::Null)
 }
 
 fn r#loop(
     env: &mut Env,
     condition: &Box<Expression>,
     body: &Box<Statement>
-) -> Result<(), RuntimeError> {
-    while expression(env, condition)?.to_boolean()? == Value::Boolean(true) {
+) -> Result<Value, InterpreterException> {
+    while expression(env, condition)?.to_boolean().unwrap() == Value::Boolean(true) {
         statement(env, body)?;
     }
 
-    Ok(())
+    Ok(Value::Null)
 }
 
 fn cond(
@@ -130,45 +143,45 @@ fn cond(
     condition: &Box<Expression>,
     if_block: &Box<Statement>,
     else_block: &Option<Box<Statement>>
-) -> Result<(), RuntimeError> {
-    if expression(env, condition)?.to_boolean()? == Value::Boolean(true) {
+) -> Result<Value, InterpreterException> {
+    let mut value = Value::Null;
+
+    if check_condition(env, condition).unwrap() {
         statement(env, if_block)?;
     }
 
     if let Some(else_block) = else_block {
-        statement(env, else_block)?;
+        value = statement(env, else_block)?;
     }
 
-    Ok(())
+    Ok(value)
 }
 
-fn group(env: &mut Env, items: &Vec<Statement>) -> Result<(), RuntimeError> {
-    let mut new_env = env.enter();
+fn group(env: &mut Env, items: &Vec<Statement>) -> Result<Value, InterpreterException> {
+    let new_env = env.enter();
 
     for item in items {
-        statement(new_env, item)?;
+        match statement(new_env, item) {
+            Ok(return_value) => {
+                match return_value {
+                    Value::Null => continue,
+                    _ => return Ok(return_value)
+                }
+            },
+            Err(err) => {
+                return Err(err)
+            }
+        }
     };
 
-    new_env.leave();
-
-    Ok(())
+    Ok(Value::Null)
 }
 
-fn print(env: &mut Env, expr: &Box<Expression>) -> Result<(), RuntimeError> {
+fn print(env: &mut Env, expr: &Box<Expression>) -> Result<Value, InterpreterException> {
     match expression(env, &expr) {
-        Ok(val) => match val {
-            Value::String(str) => println!("{str}"),
-            Value::Number(n) => println!("{n}"),
-            _ => {
-                panic!();
-                //     Err(RuntimeError {
-                //     msg: format!("Cannot print value of type {:?}", val),
-                //     info: expr
-                // })
-            }
-        },
+        Ok(val) => println!("{}", val.to_string().expect("Fixme")),
         Err(err) => return Err(err),
     };
 
-    Ok(())
+    Ok(Value::Null)
 }

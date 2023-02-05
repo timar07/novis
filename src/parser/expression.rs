@@ -59,8 +59,8 @@ fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         let node = Expression::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
-                left: term(tokens)?,
-                right: expr?,
+                left: expr?,
+                right: term(tokens)?,
             }
         );
 
@@ -81,8 +81,8 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         let node = Expression::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
-                right: expr?,
-                left: factor(tokens)?,
+                left: expr?,
+                right: factor(tokens)?,
             }
         );
 
@@ -215,20 +215,17 @@ fn parse_args(
 
     loop {
         match tokens.current().tag {
-            TokenTag::Identifier(_) => {
+            TokenTag::RightParen => {
+                tokens.accept();
+                break Ok(params);
+            },
+            _ => {
                 params.push(expression(tokens)?);
 
                 if tokens.current().tag != TokenTag::RightParen {
                     tokens.require(&[TokenTag::Comma])?;
                 }
-            },
-            TokenTag::RightParen => {
-                tokens.accept();
-                break Ok(params);
-            },
-            _ => return Err(UnexpectedToken {
-                token: tokens.current().clone()
-            })
+            }
         };
     }
 }

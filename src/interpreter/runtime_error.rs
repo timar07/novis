@@ -5,6 +5,14 @@ use crate::{
     lexer::token::Token
 };
 
+use super::value::Value;
+
+#[derive(Debug)]
+pub enum InterpreterException {
+    Fatal(RuntimeError),
+    Return(Value)
+}
+
 #[derive(Debug)]
 pub enum RuntimeError {
     IncompatibleOperands {

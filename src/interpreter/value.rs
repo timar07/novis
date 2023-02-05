@@ -44,4 +44,19 @@ impl Value {
             _ => todo!()
         }
     }
+
+    pub fn to_string(&self) -> Result<String, RuntimeError> {
+        match self {
+            Value::String(str) => Ok(format!("{str}")),
+            Value::Number(n) => Ok(format!("{n}")),
+            Value::Boolean(boolean) => Ok(format!("{boolean}")),
+            _ => {
+                panic!();
+                //     Err(RuntimeError {
+                //     msg: format!("Cannot print value of type {:?}", val),
+                //     info: expr
+                // })
+            }
+        }
+    }
 }

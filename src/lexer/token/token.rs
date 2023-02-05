@@ -47,6 +47,7 @@ pub enum TokenTag {
     If,
     Else,
     Loop,
+    Return,
     // Other
     Number(f64),
     String(String),

@@ -10,6 +10,10 @@ use crate::{
     lexer::token::TokenTag
 };
 use super::{
+    runtime_error::InterpreterException::{
+        self,
+        *
+    },
     runtime_error::RuntimeError::{
         self,
         *
@@ -18,7 +22,7 @@ use super::{
     statement::statement
 };
 
-type ExpressionValue = Result<Value, RuntimeError>;
+type ExpressionValue = Result<Value, InterpreterException>;
 
 pub fn expression(env: &mut Env, ast: &Expression) -> ExpressionValue {
     match ast {
@@ -28,17 +32,17 @@ pub fn expression(env: &mut Env, ast: &Expression) -> ExpressionValue {
     }
 }
 
-fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
+fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterException> {
     let left = expression(env, node.left.as_ref())?;
     let right = expression(env, node.right.as_ref())?;
 
     let val = match node.op.tag {
         TokenTag::Plus => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
+                (Value::Number(l), Value::Number(r)) => {
                     Value::Number(l + r)
                 },
-                (Value::String(r), Value::String(l)) => {
+                (Value::String(l), Value::String(r)) => {
                     return Ok(
                         Value::String(
                             Box::new(l.as_ref().clone() + r.as_ref())
@@ -55,19 +59,19 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                         Box::new(l.as_ref().clone() + &r.to_string())
                     )
                 },
-                _ => return Err(IncompatibleOperands {
+                _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
-                }),
+                })),
             }
         },
         TokenTag::Minus => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
-                    Value::Number(l + r)
+                (Value::Number(l), Value::Number(r)) => {
+                    Value::Number(l - r)
                 },
-                _ => return Err(IncompatibleOperands {
+                _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
-                }),
+                })),
             }
         },
         TokenTag::Star => {
@@ -75,9 +79,9 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                 (Value::Number(r), Value::Number(l)) => {
                     Value::Number(l + r)
                 },
-                _ => return Err(IncompatibleOperands {
+                _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
-                }),
+                })),
             }
         },
         TokenTag::Circ => {
@@ -85,41 +89,65 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, RuntimeError> {
                 (Value::Number(r), Value::Number(l)) => {
                     Value::Number(l + r)
                 },
-                _ => return Err(IncompatibleOperands {
+                _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
-                }),
+                })),
             }
         },
         TokenTag::Slash => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
+                (Value::Number(l), Value::Number(r)) => {
                     if r != 0.0 {
                         Value::Number(l + r)
                     } else {
-                        return Err(DivisionByZero)
+                        return Err(Fatal(DivisionByZero))
                     }
                 },
-                _ => return Err(IncompatibleOperands {
+                _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
-                }),
+                })),
             }
         },
         TokenTag::EqualEqual => Value::Boolean(left == right),
         TokenTag::BangEqual => Value::Boolean(left != right),
         TokenTag::Less => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
+                (Value::Number(l), Value::Number(r)) => {
                     Value::Boolean(l < r)
                 },
-                _ => panic!()
+                _ => return Err(Fatal(IncompatibleOperands {
+                    op: node.op.clone()
+                })),
             }
         },
         TokenTag::Greater => {
             match (left, right) {
-                (Value::Number(r), Value::Number(l)) => {
+                (Value::Number(l), Value::Number(r)) => {
                     Value::Boolean(l > r)
                 },
-                _ => panic!()
+                _ => return Err(Fatal(IncompatibleOperands {
+                    op: node.op.clone()
+                })),
+            }
+        },
+        TokenTag::LessEqual => {
+            match (left, right) {
+                (Value::Number(l), Value::Number(r)) => {
+                    Value::Boolean(l <= r)
+                },
+                _ => return Err(Fatal(IncompatibleOperands {
+                    op: node.op.clone()
+                })),
+            }
+        },
+        TokenTag::GreaterEqual => {
+            match (left, right) {
+                (Value::Number(l), Value::Number(r)) => {
+                    Value::Boolean(l >= r)
+                },
+                _ => return Err(Fatal(IncompatibleOperands {
+                    op: node.op.clone()
+                })),
             }
         },
         _ => unreachable!()
@@ -135,9 +163,9 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
         TokenTag::Minus => {
             match left {
                 Value::Number(n) => Ok(Value::Number(n)),
-                _ => return Err(IncompatibleOperands {
+                _ => return Err(Fatal(IncompatibleOperands {
                     op: node.op.clone()
-                }),
+                })),
             }
         },
         _ => unreachable!()
@@ -158,9 +186,9 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
         PrimaryNode::Identifier(token) => match &token.tag {
             TokenTag::Identifier(name) => match env.get(&name) {
                 Some(val) => return Ok(val.clone()),
-                None => return Err(NameNotDefined {
+                None => return Err(Fatal(NameNotDefined {
                     name: name.clone()
-                })
+                }))
             },
             _ => unreachable!()
         },
@@ -172,29 +200,46 @@ fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
                 Some(val) => {
                     match val {
                         Value::Function {
-                            params: _,
+                            params,
                             name: _,
                             body
                         } => {
-                            let mut new_env = env.to_owned();
-                            let mut closure = new_env.enter();
+                            let mut global_env = env.to_owned();
+                            let closure = &mut global_env.enter();
 
-                            for _ in 0..args.len() {
-                                // closure.define(params[i].tag, expression(env, &args[i])?)
+                            for i in 0..params.len() {
+                                match &params[i].tag {
+                                    TokenTag::Identifier(name) => {
+                                        closure.define(
+                                            &name,
+                                            expression(&mut env.to_owned(), &args[i])?
+                                        );
+                                    },
+                                    _ => unreachable!()
+                                }
                             }
 
-                            statement(&mut closure, body.as_ref())?;
-
-                            new_env.leave();
-                            *env = new_env;
+                            match statement(closure, body.as_ref()) {
+                                Err(exception) => {
+                                    match exception {
+                                        InterpreterException::Return(value) => {
+                                            closure.leave();
+                                            *env = global_env;
+                                            return Ok(value);
+                                        },
+                                        _ => panic!()
+                                    }
+                                }
+                                Ok(_) => todo!(),
+                            }
                         },
                         _ => unreachable!()
                     }
                     return Ok(Value::Null);
                 }
-                None => return Err(FunctionNotDefined {
+                None => return Err(Fatal(FunctionNotDefined {
                     name: name.to_string()
-                })
+                }))
             }
             _ => unreachable!()
         }
