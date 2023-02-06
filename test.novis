@@ -18,7 +18,7 @@ func fact_recursive(k) -> {
       return 1;
    }
 
-   return k*fact_recursive(k-1);
+   return k/fact_recursive(k-1);
 }
 
 print fact_recursive(5);

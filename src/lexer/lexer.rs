@@ -213,10 +213,22 @@ impl Lexer {
                 "f",
                 TokenTag::If
             ),
-            'r' => self.accept_keyword(
-                "eturn",
-                TokenTag::Return
-            ),
+            'r' => {
+                match self.current() {
+                    Some('e') => match self.next() {
+                        Some('t') => self.accept_keyword(
+                            "eturn",
+                            TokenTag::Return
+                        ),
+                        Some('p') => self.accept_keyword(
+                            "epeat",
+                            TokenTag::Repeat
+                        ),
+                        _ => self.lex_identifier()
+                    },
+                    _ => self.lex_identifier()
+                }
+            },
             _ => self.lex_identifier()
         }
     }

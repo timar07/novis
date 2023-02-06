@@ -33,6 +33,10 @@ pub fn statement(env: &mut Env, statement: &Statement) -> Result<Value, Interpre
             condition,
             body
         } => r#loop(env, condition, body),
+        // Statement::Repeat {
+        //     times,
+        //     body
+        // } => repeat(env, times, body),
         Statement::Assignment {
             operator,
             name,
@@ -125,6 +129,27 @@ fn var_definition(
     };
     Ok(Value::Null)
 }
+
+// fn repeat(
+//     env: &mut Env,
+//     times: &Box<Expression>,
+//     body: &Box<Statement>
+// ) -> Result<Value, InterpreterException> {
+//     let mut amount;
+
+//     match expression(env, times)? {
+//         Value::Number(n) => {
+//             amount = n as usize;
+//         },
+//         _ => return Err(Fatal(ExpectedToBeNumber))
+//     }
+
+//     for _ in 0..amount {
+//         statement(env, body)?;
+//     }
+
+//     Ok(Value::Null)
+// }
 
 fn r#loop(
     env: &mut Env,

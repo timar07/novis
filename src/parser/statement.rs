@@ -24,6 +24,7 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         TokenTag::Print => print(tokens),
         TokenTag::If => cond(tokens),
         TokenTag::Loop => r#loop(tokens),
+        // TokenTag::Repeat => repeat(tokens),
         TokenTag::LeftCurly => group(tokens),
         TokenTag::Let => var_definition(tokens),
         TokenTag::Func => func_definition(tokens),
@@ -138,6 +139,21 @@ fn r#loop(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         body: Box::new(body?)
     })
 }
+
+/// # Rule
+/// Repeat statement matches following grammary:
+/// ```ebnf
+/// repeat = 'repeat' expression group;
+/// ```
+// fn repeat(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
+//     let times = expression(tokens);
+//     let body = statement(tokens);
+
+//     Ok(Statement::Repeat {
+//         times: times?,
+//         body: Box::new(body?)
+//     })
+// }
 
 /// # Rule
 /// Conditional statement matches following grammary:
