@@ -6,7 +6,7 @@ use super::{
         Expression,
         PrimaryNode,
         UnaryNode,
-        BinaryNode, LiteralValue,
+        BinaryNode, LiteralValue, ExpressionNode,
     },
     parse_error::ParseError::{
         self,
@@ -28,18 +28,19 @@ pub fn expression(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseErro
 /// equality = comparison (('!=' | '==') comparison)*;
 /// ```
 fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
+    let first_token = tokens.current();
     let mut expr = comparison(tokens);
 
     while tokens.match_next(&[BangEqual, EqualEqual]) {
 
-        let node = Expression::Binary(
+        let node = ExpressionNode::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
                 left: expr?,
                 right: comparison(tokens)?,
             }
         );
-        expr = Ok(Box::new(node))
+        expr = Ok(Expression::create(node))
     };
 
     expr
@@ -56,7 +57,7 @@ fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         &[Less, Greater, LessEqual, GreaterEqual]
     ) {
 
-        let node = Expression::Binary(
+        let node = ExpressionNode::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
                 left: expr?,
@@ -64,7 +65,7 @@ fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
             }
         );
 
-        expr = Ok(Box::new(node));
+        expr = Ok(Expression::create(node));
     }
 
     expr
@@ -78,7 +79,7 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     let mut expr = factor(tokens);
 
     while tokens.match_next(&[Plus, Minus]) {
-        let node = Expression::Binary(
+        let node = ExpressionNode::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
                 left: expr?,
@@ -86,7 +87,7 @@ fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
             }
         );
 
-        expr = Ok(Box::new(node));
+        expr = Ok(Expression::create(node));
     }
 
     return expr;
@@ -101,7 +102,7 @@ fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     let mut expr = exponent(tokens);
 
     while tokens.match_next(&[Star, Slash]) {
-        let node = Expression::Binary (
+        let node = ExpressionNode::Binary (
             BinaryNode {
                 op: tokens.prev().clone(),
                 left: expr?,
@@ -109,7 +110,7 @@ fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
             }
         );
 
-        expr = Ok(Box::new(node));
+        expr = Ok(Expression::create(node));
     }
 
     return expr;
@@ -123,14 +124,14 @@ fn exponent(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     let mut expr = unary(tokens);
 
     if tokens.match_next(&[Circ]) {
-        let node = Expression::Binary(
+        let node = ExpressionNode::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
                 left: expr?,
                 right: exponent(tokens)?, // TODO: Avoid recursion
             }
         );
-        expr = Ok(Box::new(node))
+        expr = Ok(Expression::create(node))
     };
 
     expr
@@ -142,14 +143,14 @@ fn exponent(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 /// ```
 fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     if tokens.match_next(&[Minus]) {
-        let node = Expression::Unary(
+        let node = ExpressionNode::Unary(
             UnaryNode {
                 op: tokens.prev().clone(),
                 left: primary(tokens)?,
             }
         );
 
-        return Ok(Box::new(node));
+        return Ok(Expression::create(node));
     }
 
     primary(tokens)
@@ -160,7 +161,7 @@ fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 /// primary = literal | identifier | '(' expression ')';
 /// ```
 fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
-    let node = match &tokens.accept().tag {
+    let node = ExpressionNode::Primary(match &tokens.accept().tag {
         Number(n) => PrimaryNode::Literal(
             LiteralValue::Number(*n)
         ),
@@ -181,9 +182,9 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         _ => return Err(ExpectedExpression {
             token: tokens.prev().clone()
         })
-    };
+    });
 
-    Ok(Box::new(Expression::Primary(node)))
+    Ok(Expression::create(node))
 }
 
 /// # Rule

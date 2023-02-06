@@ -5,7 +5,7 @@ use crate::{
         BinaryNode,
         UnaryNode,
         PrimaryNode,
-        LiteralValue
+        LiteralValue, ExpressionNode
     },
     lexer::token::{TokenTag, Token}
 };
@@ -24,10 +24,10 @@ use super::{
 type ExpressionValue = Result<Value, InterpreterException>;
 
 pub fn expression(env: &mut Env, ast: &Expression) -> ExpressionValue {
-    match ast {
-        Expression::Binary(bin_expr) => binary(env, bin_expr),
-        Expression::Unary(un_expr) => unary(env, un_expr),
-        Expression::Primary(prim_expr) => primary(env, prim_expr),
+    match ast.get_node() {
+        ExpressionNode::Binary(bin_expr) => binary(env, &bin_expr),
+        ExpressionNode::Unary(un_expr) => unary(env, &un_expr),
+        ExpressionNode::Primary(prim_expr) => primary(env, &prim_expr),
     }
 }
 
