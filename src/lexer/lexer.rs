@@ -184,7 +184,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex_keyword(&mut self) -> TokenTag {
+    fn lex_keyword(&mut self) -> TokenTag {
         match self.prev().unwrap() {
             'e' => self.accept_keyword("lse", TokenTag::Else),
             'f' => {
@@ -241,7 +241,7 @@ impl Lexer {
         self.lex_identifier()
     }
 
-    pub fn lex_identifier(&mut self) -> TokenTag {
+    fn lex_identifier(&mut self) -> TokenTag {
         let mut name = String::new();
         name.push(self.prev().unwrap());
 
@@ -313,7 +313,7 @@ impl Lexer {
         ch.is_ascii_alphabetic() || ch == '_'
     }
 
-    pub fn match_word(&mut self, word: &'static str) -> bool {
+    fn match_word(&mut self, word: &'static str) -> bool {
         if self.check_word(word) {
             self.curr += word.len();
             self.col += word.len();
@@ -323,11 +323,11 @@ impl Lexer {
         false
     }
 
-    pub fn check_word(&mut self, word: &'static str) -> bool {
+    fn check_word(&mut self, word: &'static str) -> bool {
         &self.src[self.curr..self.curr+word.len()] == String::from(word)
     }
 
-    pub fn match_next(&mut self, ch: char) -> bool {
+    fn match_next(&mut self, ch: char) -> bool {
         let next = self.current();
         if next.is_some() && next.unwrap() == ch {
             self.accept();
@@ -337,7 +337,7 @@ impl Lexer {
         false
     }
 
-    pub fn accept(&mut self) -> Option<char> {
+    fn accept(&mut self) -> Option<char> {
         let ch = self.current();
 
         if ch.is_some() {
@@ -354,22 +354,22 @@ impl Lexer {
         return ch;
     }
 
-    pub fn skip_line(&mut self) {
+    fn skip_line(&mut self) {
         while self.current() != Some('\n') && self.current().is_some() {
             self.accept();
         }
     }
 
     #[allow(dead_code)]
-    pub fn next(&self) -> Option<char> {
+    fn next(&self) -> Option<char> {
         self.src.chars().nth(self.curr+1)
     }
 
-    pub fn prev(&self) -> Option<char> {
+    fn prev(&self) -> Option<char> {
         self.src.chars().nth(self.curr-1)
     }
 
-    pub fn current(&self) -> Option<char> {
+    fn current(&self) -> Option<char> {
         self.src.chars().nth(self.curr)
     }
 }
