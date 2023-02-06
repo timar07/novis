@@ -226,7 +226,7 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                     _ => { Ok(Value::Null) }
                 }
             }
-            Some(_) => unreachable!(),
+            Some(_) => return Err(Fatal(ObjectIsNotCallable)),
             None => return Err(Fatal(FunctionNotDefined {
                 name: name.to_string()
             }))

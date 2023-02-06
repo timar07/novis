@@ -76,7 +76,7 @@ impl Env {
 
         while current.is_some() {
             let inner = current.expect(
-                &format!("internal error at {} of environment", self.level)
+                &format!("internal error at level {} of environment", self.level)
             );
 
             if let Some(value) = inner.get(name) {

@@ -179,7 +179,7 @@ fn group(env: &mut Env, items: &Vec<Statement>) -> Result<Value, InterpreterExce
 
 fn print(env: &mut Env, expr: &Box<Expression>) -> Result<Value, InterpreterException> {
     match expression(env, &expr) {
-        Ok(val) => println!("{}", val.to_string().expect("Fixme")),
+        Ok(val) => println!("{}", val.to_string()?),
         Err(err) => return Err(err),
     };
 

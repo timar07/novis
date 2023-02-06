@@ -20,6 +20,11 @@ pub enum RuntimeError {
     },
     DivisionByZero,
     ReturnOutOfFunction,
+    ObjectIsNotCallable,
+    ConversionError {
+        from: String,
+        to: String
+    },
     FunctionNotDefined {
         name: String
     },
@@ -45,8 +50,17 @@ impl DescribableError for RuntimeError {
             RuntimeError::DivisionByZero => {
                 format!("Division by zero")
             },
+            RuntimeError::ObjectIsNotCallable => {
+                format!("Object is not callable")
+            }
             RuntimeError::ReturnOutOfFunction => {
                 format!("Cannot return value outside of the function")
+            },
+            RuntimeError::ConversionError {
+                from,
+                to
+            } => {
+                format!("Cannot convert value of type `{from}` to `{to}`")
             },
             RuntimeError::FunctionNotDefined { name } => {
                 format!("Function `{}` not defined", name)

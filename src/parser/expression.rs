@@ -104,8 +104,8 @@ fn factor(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
         let node = Expression::Binary (
             BinaryNode {
                 op: tokens.prev().clone(),
-                left: exponent(tokens)?,
-                right: expr?,
+                left: expr?,
+                right: exponent(tokens)?,
             }
         );
 

@@ -4,7 +4,7 @@ use crate::{
     lexer::token::Token
 };
 use super::{
-    runtime_error::RuntimeError
+    runtime_error::{RuntimeError, InterpreterException}
 };
 
 #[derive(Clone, Debug)]
@@ -45,17 +45,16 @@ impl Value {
         }
     }
 
-    pub fn to_string(&self) -> Result<String, RuntimeError> {
+    pub fn to_string(&self) -> Result<String, InterpreterException> {
         match self {
             Value::String(str) => Ok(format!("{str}")),
             Value::Number(n) => Ok(format!("{n}")),
             Value::Boolean(boolean) => Ok(format!("{boolean}")),
             _ => {
-                panic!();
-                //     Err(RuntimeError {
-                //     msg: format!("Cannot print value of type {:?}", val),
-                //     info: expr
-                // })
+                Err(InterpreterException::Fatal(RuntimeError::ConversionError {
+                    from: format!("{:?}", self),
+                    to: "String".into(),
+                }))
             }
         }
     }
