@@ -21,5 +21,4 @@ func fact_recursive(k) -> {
    return k*fact_recursive(k-1);
 }
 
-print fact(5);
 print fact_recursive(5);
