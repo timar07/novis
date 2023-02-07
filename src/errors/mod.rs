@@ -1,4 +1,3 @@
-mod error_output;
 mod error_span;
 mod error_trait;
 

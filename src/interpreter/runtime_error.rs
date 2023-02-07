@@ -56,7 +56,7 @@ impl DescribableError for RuntimeError {
             },
             RuntimeError::IncompatibleOperands {
                 expr,
-                op
+                op: _
             } => {
                 expr.get_span()
             }
