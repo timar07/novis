@@ -2,7 +2,7 @@ use std::{fmt::{
     Display,
     Formatter,
     Result
-}, rc::Rc, ops::Range};
+}, rc::Rc};
 
 use crate::lexer::token::Token;
 use colored::*;
@@ -71,18 +71,16 @@ impl Highlighter {
 
         for n in start-1..=end {
             let line = src.lines().nth(n).unwrap();
+
             if line.len() > width {
-                dbg!(line.len());
                 width = line.len();
             }
 
-            let fmt_line = &LineFormatter::new(
+            snippet.push_str(&LineFormatter::new(
                 n,
                 line.into(),
                 None
-            );
-
-            snippet.push_str(fmt_line);
+            ));
         }
 
         format!(
@@ -107,13 +105,13 @@ impl LineFormatter {
     pub fn new(number: usize, line: String, extra: Option<String>) -> String {
         let snippet_prefix = format!(
             "    {} {} ",
-            number,
-            "|".red()
-        ).bright_black();
+            number.to_string(),
+            "|"
+        );
 
         format!(
             "{}{}{}",
-            snippet_prefix,
+            snippet_prefix.bright_black(),
             line,
             if extra.is_some() {
                 format!(
