@@ -2,7 +2,10 @@ use crate::{
     errors::{
         DescribableError
     },
-    lexer::token::Token
+    lexer::token::Token, parser::ast::expression::{
+        BinaryNode,
+        Node
+    }
 };
 
 use super::value::Value;
@@ -16,9 +19,10 @@ pub enum InterpreterException {
 #[derive(Debug)]
 pub enum RuntimeError {
     IncompatibleOperands {
+        expr: BinaryNode,
         op: Token,
     },
-    DivisionByZero,
+    DivisionByZero(BinaryNode),
     ReturnOutOfFunction,
     ObjectIsNotCallable,
     ConversionError {
@@ -45,9 +49,26 @@ impl DescribableError for RuntimeError {
         "RuntimeError".into()
     }
 
+    fn print_snippet(&self) {
+        let span = match self {
+            RuntimeError::DivisionByZero(expr) => {
+                expr.get_span()
+            },
+            RuntimeError::IncompatibleOperands {
+                expr,
+                op
+            } => {
+                expr.get_span()
+            }
+            _ => todo!()
+        };
+
+        eprintln!("{}", span);
+    }
+
     fn message(&self) -> String {
         match self {
-            RuntimeError::DivisionByZero => {
+            RuntimeError::DivisionByZero(_) => {
                 format!("Division by zero")
             },
             RuntimeError::ObjectIsNotCallable => {
@@ -68,7 +89,7 @@ impl DescribableError for RuntimeError {
             RuntimeError::NameNotDefined { name } => {
                 format!("Name `{}` not defined", name)
             },
-            RuntimeError::IncompatibleOperands { op } => {
+            RuntimeError::IncompatibleOperands { expr: _, op } => {
                 format!("Cannot perform `{:?}` between operands", op.tag)
             },
             RuntimeError::FunctionRedefinition { name } => {

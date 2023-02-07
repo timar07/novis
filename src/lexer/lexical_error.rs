@@ -28,4 +28,8 @@ impl DescribableError for LexicalError {
             }
         }
     }
+
+    fn print_snippet(&self) {
+        todo!()
+    }
 }

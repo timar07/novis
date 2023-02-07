@@ -32,6 +32,10 @@ impl DescribableError for ParseError {
         "ParseError".into()
     }
 
+    fn print_snippet(&self) {
+        todo!();
+    }
+
     fn message(&self) -> String {
         match self {
             ParseError::UnexpectedToken{token} => {

@@ -5,7 +5,7 @@ use crate::{
         BinaryNode,
         UnaryNode,
         PrimaryNode,
-        LiteralValue, ExpressionNode
+        ExpressionNode
     },
     lexer::token::{TokenTag, Token}
 };
@@ -60,6 +60,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     )
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -70,6 +71,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Number(l - r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -80,6 +82,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Number(l * r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -90,6 +93,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Number(l.powf(r))
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -100,10 +104,11 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     if r != 0.0 {
                         Value::Number(l / r)
                     } else {
-                        return Err(Fatal(DivisionByZero))
+                        return Err(Fatal(DivisionByZero(node.clone())))
                     }
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -116,6 +121,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Boolean(l < r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -126,6 +132,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Boolean(l > r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -136,6 +143,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Boolean(l <= r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -146,6 +154,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Boolean(l >= r)
                 },
                 _ => return Err(Fatal(IncompatibleOperands {
+                    expr: node.clone(),
                     op: node.op.clone()
                 })),
             }
@@ -164,9 +173,7 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
         TokenTag::Minus => {
             match left {
                 Value::Number(n) => Ok(Value::Number(-n)),
-                _ => return Err(Fatal(IncompatibleOperands {
-                    op: node.op.clone()
-                })),
+                _ => todo!()
             }
         },
         _ => unreachable!()
@@ -176,7 +183,7 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
 /// Evaluate primary expression
 fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
     match node {
-        PrimaryNode::Literal(value) => literal(value),
+        PrimaryNode::Literal(token) => literal(token),
         PrimaryNode::Paren(expr) => paren(env, expr),
         PrimaryNode::Identifier(token) => identifier(env, token),
         PrimaryNode::Call {
@@ -249,10 +256,11 @@ fn identifier(env: &mut Env, token: &Token) -> Result<Value, InterpreterExceptio
 }
 
 /// Evaluate literal value
-fn literal(lit_value: &LiteralValue) -> ExpressionValue {
-    let value = match lit_value {
-        LiteralValue::Number(n) => Value::Number(*n),
-        LiteralValue::String(str) => Value::String(Box::new(str.into())),
+fn literal(token: &Token) -> ExpressionValue {
+    let value = match token.tag.clone() {
+        TokenTag::Number(n) => Value::Number(n),
+        TokenTag::String(s) => Value::String(Box::new(s.into())),
+        _ => unreachable!()
     };
 
     Ok(value)

@@ -6,7 +6,8 @@ use super::{
         Expression,
         PrimaryNode,
         UnaryNode,
-        BinaryNode, LiteralValue, ExpressionNode,
+        BinaryNode,
+        ExpressionNode,
     },
     parse_error::ParseError::{
         self,
@@ -28,11 +29,9 @@ pub fn expression(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseErro
 /// equality = comparison (('!=' | '==') comparison)*;
 /// ```
 fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
-    let first_token = tokens.current();
     let mut expr = comparison(tokens);
 
     while tokens.match_next(&[BangEqual, EqualEqual]) {
-
         let node = ExpressionNode::Binary(
             BinaryNode {
                 op: tokens.prev().clone(),
@@ -40,6 +39,7 @@ fn equality(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
                 right: comparison(tokens)?,
             }
         );
+
         expr = Ok(Expression::create(node))
     };
 
@@ -162,12 +162,7 @@ fn unary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 /// ```
 fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
     let node = ExpressionNode::Primary(match &tokens.accept().tag {
-        Number(n) => PrimaryNode::Literal(
-            LiteralValue::Number(*n)
-        ),
-        String(str) => PrimaryNode::Literal(
-            LiteralValue::String(str.clone())
-        ),
+        Number(_) | String(_) => PrimaryNode::Literal(tokens.prev().clone()),
         Identifier(_) => {
             match tokens.current().tag {
                 TokenTag::LeftParen => call(tokens)?,

@@ -1,24 +1,4 @@
 let a <- 1;
-let n <- 10;
+let b <- 2;
 
-func fact(k) -> {
-   let a <- 1;
-   let n <- 1;
-
-   loop n <= k {
-      a = a*n;
-      n = n+1;
-   }
-
-   return a;
-}
-
-func fact_recursive(k) -> {
-   if k <= 1 {
-      return 1;
-   }
-
-   return k/fact_recursive(k-1);
-}
-
-print fact_recursive(5);
+print ("string"/0)+2;

@@ -1,18 +1,25 @@
+use std::fmt::Debug;
+
 use crate::{
     lexer::token::{
         Token
+    },
+    errors::{
+        Span
     }
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expression {
-    node: ExpressionNode
+    node: ExpressionNode,
 }
 
 impl Expression {
-    pub fn create(node: ExpressionNode) -> Box<Self> {
+    pub fn create(
+        node: ExpressionNode,
+    ) -> Box<Self> {
         Box::new(Self {
-            node: node
+            node: node,
         })
     }
 
@@ -21,29 +28,57 @@ impl Expression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExpressionNode {
     Primary(PrimaryNode),
     Unary(UnaryNode),
     Binary(BinaryNode)
 }
 
-#[derive(Debug)]
+impl Node for ExpressionNode {
+    fn get_span(&self) -> Span {
+        match self {
+            Self::Primary(node) => node.get_span(),
+            Self::Unary(node) => node.get_span(),
+            Self::Binary(node) => node.get_span()
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct BinaryNode {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
     pub op: Token,
 }
 
-#[derive(Debug)]
+impl Node for BinaryNode {
+    fn get_span(&self) -> Span {
+        Span {
+            start: self.left.get_node().get_span().start,
+            end: self.right.get_node().get_span().end
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct UnaryNode {
     pub left: Box<Expression>,
     pub op: Token,
 }
 
-#[derive(Debug)]
+impl Node for UnaryNode {
+    fn get_span(&self) -> Span {
+        Span {
+            start: self.op.clone(),
+            end: self.left.get_node().get_span().end
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum PrimaryNode {
-    Literal(LiteralValue),
+    Literal(Token),
     Paren(Box<Expression>),
     Identifier(Token),
     Call {
@@ -52,8 +87,23 @@ pub enum PrimaryNode {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum LiteralValue {
-    String(String),
-    Number(f64),
+impl Node for PrimaryNode {
+    fn get_span(&self) -> Span {
+        match &self {
+            Self::Identifier(token) => Span {
+                start: token.clone(),
+                end: token.clone()
+            },
+            Self::Literal(token) => Span {
+                start: token.clone(),
+                end: token.clone()
+            },
+            Self::Paren(expr) => expr.get_node().get_span(),
+            _ => todo!()
+        }
+    }
+}
+
+pub trait Node {
+    fn get_span(&self) -> Span;
 }

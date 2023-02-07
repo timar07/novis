@@ -1,7 +1,10 @@
 mod error_output;
+mod error_span;
 mod error_trait;
 
 pub use error_trait::{
     DebugInfo,
-    DescribableError
+    DescribableError,
 };
+
+pub use error_span::Span;
