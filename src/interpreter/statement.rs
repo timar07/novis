@@ -174,17 +174,13 @@ fn cond(
     if_block: &Box<Statement>,
     else_block: &Option<Box<Statement>>
 ) -> Result<Value, InterpreterException> {
-    let mut value = Value::Null;
-
     if check_condition(env, condition).unwrap() {
         statement(env, if_block)?;
+    } else if let Some(else_block) = else_block {
+        statement(env, else_block)?;
     }
 
-    if let Some(else_block) = else_block {
-        value = statement(env, else_block)?;
-    }
-
-    Ok(value)
+    Ok(Value::Null)
 }
 
 fn group(env: &mut Env, items: &Vec<Statement>) -> Result<Value, InterpreterException> {
