@@ -25,7 +25,7 @@ impl DescribableError for LexicalError {
         }
     }
 
-    fn print_snippet(&self) {
-        eprintln!("{}", Span::from(self.token.clone()));
+    fn snippet(&self) -> String {
+        Span::from(self.token.clone()).to_string()
     }
 }

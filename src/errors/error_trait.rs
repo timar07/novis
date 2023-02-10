@@ -14,13 +14,13 @@ pub struct DebugInfo {
 pub trait DescribableError {
     fn message(&self) -> String;
     fn kind(&self) -> String;
-    fn print_snippet(&self);
+    fn snippet(&self) -> String;
     fn print(&self) {
         eprintln!(
-            "{}: {}",
+            "{}: {}\n{}",
             self.kind().red(),
-            self.message()
+            self.message(),
+            self.snippet()
         );
-        self.print_snippet();
     }
 }

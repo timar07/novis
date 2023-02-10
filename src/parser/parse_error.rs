@@ -54,8 +54,8 @@ impl DescribableError for ParseError {
         "ParseError".into()
     }
 
-    fn print_snippet(&self) {
-        eprintln!("{}", Span::from(self.token.clone()))
+    fn snippet(&self) -> String {
+        Span::from(self.token.clone()).to_string()
     }
 
     fn message(&self) -> String {

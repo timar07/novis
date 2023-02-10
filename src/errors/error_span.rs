@@ -65,6 +65,7 @@ impl Highlighter {
         col: usize,
         len: usize
     ) -> String {
+        // FIXME: Unsafe unwrap
         LineFormatter::new(
             line,
             src.lines().nth(line).unwrap().into(),

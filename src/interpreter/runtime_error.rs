@@ -49,21 +49,19 @@ impl DescribableError for RuntimeError {
         "RuntimeError".into()
     }
 
-    fn print_snippet(&self) {
-        let span = match self {
+    fn snippet(&self) -> String {
+        match self {
             RuntimeError::DivisionByZero(expr) => {
-                expr.get_span()
+                expr
             },
             RuntimeError::IncompatibleOperands {
                 expr,
                 op: _
             } => {
-                expr.get_span()
+                expr
             }
             _ => todo!()
-        };
-
-        eprintln!("{}", span);
+        }.get_span().to_string()
     }
 
     fn message(&self) -> String {
