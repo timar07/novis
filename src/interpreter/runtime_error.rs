@@ -4,7 +4,7 @@ use crate::{
     },
     lexer::token::Token, parser::ast::expression::{
         BinaryNode,
-        Node
+        Node, UnaryNode
     }
 };
 
@@ -22,6 +22,10 @@ pub enum RuntimeError {
         expr: BinaryNode,
         op: Token,
     },
+    IncompatibleOperand {
+        expr: UnaryNode,
+        op: Token
+    },
     DivisionByZero(BinaryNode),
     ReturnOutOfFunction,
     ObjectIsNotCallable,
@@ -33,10 +37,6 @@ pub enum RuntimeError {
         name: String
     },
     NameNotDefined {
-        name: String
-    },
-    #[allow(dead_code)]
-    FunctionRedefinition {
         name: String
     },
     NameRedefinition {
@@ -90,8 +90,8 @@ impl DescribableError for RuntimeError {
             RuntimeError::IncompatibleOperands { expr: _, op } => {
                 format!("Cannot perform `{:?}` between operands", op.tag)
             },
-            RuntimeError::FunctionRedefinition { name } => {
-                format!("Function `{}` is already defined", name)
+            RuntimeError::IncompatibleOperand { expr: _, op } => {
+                format!("Cannot perform `{:?}` to the operand", op.tag)
             },
             RuntimeError::NameRedefinition { name } => {
                 format!("Name `{}` is already defined", name)

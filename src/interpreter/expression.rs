@@ -14,9 +14,7 @@ use super::{
         self,
         *
     },
-    runtime_error::RuntimeError::{
-        *,
-    },
+    runtime_error::RuntimeError::*,
     value::Value,
     statement::statement,
 };
@@ -173,7 +171,10 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
         TokenTag::Minus => {
             match left {
                 Value::Number(n) => Ok(Value::Number(-n)),
-                _ => todo!()
+                _ => Err(Fatal(IncompatibleOperand {
+                    op: node.op.clone(),
+                    expr: node.clone()
+                }))
             }
         },
         _ => unreachable!()
