@@ -79,11 +79,16 @@ impl Node for UnaryNode {
 #[derive(Debug, Clone)]
 pub enum PrimaryNode {
     Literal(Token),
-    Paren(Box<Expression>),
+    Paren {
+        lparen: Token,
+        rparen: Token,
+        expr: Box<Expression>
+    },
     Identifier(Token),
     Call {
         name: Token,
-        args: Vec<Box<Expression>>
+        args: Vec<Box<Expression>>,
+        rparen: Token
     }
 }
 
@@ -98,8 +103,22 @@ impl Node for PrimaryNode {
                 start: token.clone(),
                 end: token.clone()
             },
-            Self::Paren(expr) => expr.get_node().get_span(),
-            _ => todo!()
+            Self::Paren {
+                lparen,
+                rparen,
+                expr: _
+            }  => Span {
+                start: lparen.clone(),
+                end: rparen.clone()
+            },
+            PrimaryNode::Call {
+                name,
+                args: _,
+                rparen
+            } => Span {
+                start: name.clone(),
+                end: rparen.clone()
+            },
         }
     }
 }

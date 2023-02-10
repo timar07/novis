@@ -170,9 +170,15 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
             }
         },
         LeftParen => {
-            let node = PrimaryNode::Paren(expression(tokens)?);
-            tokens.require(&[RightParen])?;
-            node
+            let lparen = tokens.prev().clone();
+            let expr = expression(tokens)?;
+            let rparen = tokens.require(&[RightParen])?.clone();
+
+            PrimaryNode::Paren {
+                lparen: lparen,
+                rparen: rparen,
+                expr: expr
+            }
         },
         _ => return Err(ParseError {
             token: tokens.prev().clone(),
@@ -194,7 +200,8 @@ fn call(
     let identifier = tokens.prev().clone();
     Ok(PrimaryNode::Call {
         name: identifier,
-        args: parse_args(tokens)?
+        args: parse_args(tokens)?,
+        rparen: tokens.prev().clone()
     })
 }
 

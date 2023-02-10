@@ -184,11 +184,16 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
 fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
     match node {
         PrimaryNode::Literal(token) => literal(token),
-        PrimaryNode::Paren(expr) => paren(env, expr),
+        PrimaryNode::Paren {
+            lparen: _,
+            rparen: _,
+            expr
+        } => paren(env, expr),
         PrimaryNode::Identifier(token) => identifier(env, token),
         PrimaryNode::Call {
             name,
-            args
+            args,
+            rparen: _
         } => call(name, env, args),
     }
 }
