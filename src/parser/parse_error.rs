@@ -17,7 +17,6 @@ pub struct ParseError {
 pub enum ParseErrorTag {
     UnexpectedToken,
     ExpectedToken(TokenTag),
-    ExpectedSemicolon,
     ExpectedIdentifier,
     ExpectedExpression
 }
@@ -46,11 +45,6 @@ impl Into<String> for ParseErrorTag {
                     "expected identifier",
                 )
             },
-            Self::ExpectedSemicolon => {
-                format!(
-                    "expected semicolon",
-                )
-            }
         }
     }
 }
