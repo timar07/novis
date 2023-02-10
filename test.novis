@@ -1,4 +1,21 @@
-let a <- 1;
-let b <- 2;
 
-print 2/0;
+func discriminant(a, b, c) -> {
+    return b*b-4*a*c;
+}
+
+func square_eq(a, b, c) -> {
+    let d <- discriminant(a, b, c);
+
+    if d > 0 {
+        let denominator <- 2*a;
+        let d_root <- d^0.5;
+
+        let x1 <- (-b+d_root)/denominator;
+        let x2 <- (-b-d_root)/denominator;
+
+        print "x1 = " + x1;
+        print "x2 = " + x2;
+    }
+}
+
+square_eq(1, 5, 1);

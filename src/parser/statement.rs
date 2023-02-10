@@ -6,7 +6,10 @@ use crate::{
     parser::{
         ast::statement::Statement,
         token_stream::TokenStream,
-        parse_error::ParseError
+        parse_error::{
+            ParseError,
+            ParseErrorTag::*
+        }
     }
 };
 use super::{expression::expression};
@@ -39,19 +42,15 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         }
     };
 
-    // dbg!(&stmt);
-
-    match tokens.require(&[TokenTag::Semicolon]) {
-        Err(_) => {
-            if tokens.prev().tag == TokenTag::RightCurly {
-                return stmt;
+    match stmt {
+        Ok(stmt) => {
+            if tokens.prev().tag != TokenTag::RightCurly {
+                tokens.require(&[TokenTag::Semicolon])?;
             }
 
-            Err(ParseError::ExpectedSemicolon {
-                token: tokens.current().clone(),
-            })
+            Ok(stmt)
         },
-        _ => stmt
+        Err(err) => Err(err)
     }
 }
 
@@ -65,8 +64,9 @@ fn func_definition(
 ) -> Result<Statement, ParseError> {
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
-        _ => return Err(ParseError::ExpectedIdentifier {
+        _ => return Err(ParseError {
             token: tokens.current().clone(),
+            tag: ExpectedIdentifier
         })
     };
 
@@ -107,8 +107,9 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
                 tokens.accept();
                 break Ok(params);
             },
-            _ => return Err(ParseError::UnexpectedToken {
-                token: tokens.current().clone()
+            _ => return Err(ParseError {
+                token: tokens.current().clone(),
+                tag: UnexpectedToken
             })
         };
     }
@@ -214,9 +215,12 @@ fn var_definition(
 ) -> Result<Statement, ParseError> {
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
-        _ => return Err(ParseError::ExpectedIdentifier {
-            token: tokens.current().clone()
-        })
+        _ => {
+            return Err(ParseError {
+                token: tokens.current().clone(),
+                tag: ExpectedIdentifier
+            })
+        }
     };
 
     tokens.require(&[TokenTag::ArrowLeft])?;

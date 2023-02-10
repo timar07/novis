@@ -13,7 +13,7 @@ use crate::{
         Lexeme
     }
 };
-use super::{lexical_error::LexicalError};
+use super::{lexical_error::{LexicalError, LexicalErrorTag::*}};
 
 pub struct Lexer {
     pub src: Rc<String>,
@@ -153,9 +153,9 @@ impl Lexer {
                 // Identifiers and keywords
                 'A'..='Z' | 'a'..='z' | '_' => self.lex_keyword(),
                 _ => {
-                    return Err(LexicalError::UnknownToken {
-                        lexeme: ch,
+                    return Err(LexicalError {
                         token: self.create_token(TokenTag::Error),
+                        tag: UnknownToken
                     })
                 }
             };

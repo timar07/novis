@@ -1,8 +1,11 @@
-use std::{fmt::{
-    Display,
-    Formatter,
-    Result
-}, rc::Rc};
+use std::{
+    fmt::{
+        Display,
+        Formatter,
+        Result
+    },
+    rc::Rc
+};
 
 use crate::lexer::token::Token;
 use colored::*;
@@ -13,33 +16,40 @@ pub struct Span {
     pub end: Token,
 }
 
+impl From<Token> for Span {
+    fn from(item: Token) -> Self {
+        Self {
+            start: item.clone(),
+            end: item.clone()
+        }
+    }
+}
+
 impl Display for Span {
    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let info = self.clone().start.info;
         let len = (self.end.info.col+self.end.info.len) - self.start.info.col;
-
-        if self.start.info.line != self.end.info.line {
-            writeln!(
-                f,
-                "{}",
-                Highlighter::multiline(
-                    info.src,
-                    self.start.info.line,
-                    self.end.info.line
-                )
-            )?;
+        let snippet = if self.start.info.line != self.end.info.line {
+            Highlighter::multiline(
+                info.src,
+                self.start.info.line,
+                self.end.info.line
+            )
         } else {
-            writeln!(
-                f,
-                "{}",
-                Highlighter::inline(
-                    info.src,
-                    info.line-1,
-                    info.col,
-                    len
-                )
-            )?;
-        }
+            Highlighter::inline(
+                info.src,
+                info.line-1,
+                info.col,
+                len
+            )
+        };
+
+
+        write!(
+            f,
+            "{}",
+            snippet
+        )?;
 
         Ok(())
     }
@@ -69,7 +79,7 @@ impl Highlighter {
         let mut snippet: String = String::from("");
         let mut width: usize = 0;
 
-        for n in start-1..=end {
+        for n in start-1..end {
             let line = src.lines().nth(n).unwrap();
 
             if line.len() > width {
@@ -105,7 +115,7 @@ impl LineFormatter {
     pub fn new(number: usize, line: String, extra: Option<String>) -> String {
         let snippet_prefix = format!(
             "    {} {} ",
-            number.to_string(),
+            (number+1).to_string(),
             "|"
         );
 

@@ -1,6 +1,9 @@
 use crate::lexer::token::{Token, TokenTag};
 
-use super::parse_error::ParseError;
+use super::parse_error::{
+    ParseError,
+    ParseErrorTag::*
+};
 
 #[derive(Clone)]
 pub struct TokenStream {
@@ -23,9 +26,9 @@ impl TokenStream {
             return Ok(self.prev());
         }
 
-        Err(ParseError::ExpectedToken {
-            expected: tokens[0].clone(),
+        Err(ParseError {
             token: self.current().clone(),
+            tag: ExpectedToken(tokens[0].clone())
         })
     }
 

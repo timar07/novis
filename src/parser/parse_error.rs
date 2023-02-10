@@ -3,28 +3,56 @@ use crate::{
         Token, TokenTag
     },
     errors::{
-        DescribableError
+        DescribableError, Span
     }
 };
 
 #[derive(Debug)]
-pub enum ParseError {
-    UnexpectedToken{
-        token: Token
-    },
-    ExpectedToken{
-        expected: TokenTag,
-        token: Token
-    },
-    ExpectedSemicolon {
-        token: Token
-    },
-    ExpectedIdentifier{
-        token: Token
-    },
-    ExpectedExpression{
-        token: Token
-    },
+pub struct ParseError {
+    pub token: Token,
+    pub tag: ParseErrorTag
+}
+
+#[derive(Debug, Clone)]
+pub enum ParseErrorTag {
+    UnexpectedToken,
+    ExpectedToken(TokenTag),
+    ExpectedSemicolon,
+    ExpectedIdentifier,
+    ExpectedExpression
+}
+
+impl Into<String> for ParseErrorTag {
+    fn into(self) -> String {
+        match self {
+            Self::UnexpectedToken => {
+                format!(
+                    "unexpected token",
+                )
+            },
+            Self::ExpectedExpression => {
+                format!(
+                    "expected expression",
+                )
+            },
+            Self::ExpectedToken(token) => {
+                format!(
+                    "expected {:?}",
+                    token,
+                )
+            },
+            Self::ExpectedIdentifier => {
+                format!(
+                    "expected identifier",
+                )
+            },
+            Self::ExpectedSemicolon => {
+                format!(
+                    "expected semicolon",
+                )
+            }
+        }
+    }
 }
 
 impl DescribableError for ParseError {
@@ -33,43 +61,11 @@ impl DescribableError for ParseError {
     }
 
     fn print_snippet(&self) {
-        todo!();
+        eprintln!("{}", Span::from(self.token.clone()))
     }
 
     fn message(&self) -> String {
-        match self {
-            ParseError::UnexpectedToken{token} => {
-                format!(
-                    "unexpected token {:?}",
-                    token.tag
-                )
-            },
-            ParseError::ExpectedExpression{token} => {
-                format!(
-                    "expected expression, got {:?}",
-                    token.tag
-                )
-            },
-            ParseError::ExpectedToken { expected, token } => {
-                format!(
-                    "expected {:?}, got {:?}",
-                    expected,
-                    token.tag
-                )
-            },
-            ParseError::ExpectedIdentifier { token } => {
-                format!(
-                    "expected identifier, got {:?}",
-                    token.tag
-                )
-            },
-            ParseError::ExpectedSemicolon { token } => {
-                format!(
-                    "expected semicolon, got {:?}",
-                    token.tag
-                )
-            }
-        }
+        self.tag.clone().into()
     }
 }
 

@@ -1,13 +1,15 @@
 use crate::{lexer::token::{
     Token
-}, errors::{DescribableError}};
+}, errors::{DescribableError, Span}};
+
+pub struct LexicalError {
+    pub token: Token,
+    pub tag: LexicalErrorTag
+}
 
 #[derive(Debug)]
-pub enum LexicalError {
-    UnknownToken{
-        lexeme: char,
-        token: Token
-    },
+pub enum LexicalErrorTag {
+    UnknownToken,
 }
 
 impl DescribableError for LexicalError {
@@ -16,20 +18,14 @@ impl DescribableError for LexicalError {
     }
 
     fn message(&self) -> String {
-        match self {
-            LexicalError::UnknownToken {
-                lexeme,
-                token: _
-            } => {
-                format!(
-                    "Unknown token `{}`",
-                    lexeme
-                )
+        match self.tag {
+            LexicalErrorTag::UnknownToken => {
+                format!("Unknown token")
             }
         }
     }
 
     fn print_snippet(&self) {
-        todo!()
+        eprintln!("{}", Span::from(self.token.clone()));
     }
 }

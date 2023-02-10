@@ -9,9 +9,9 @@ use super::{
         BinaryNode,
         ExpressionNode,
     },
-    parse_error::ParseError::{
-        self,
-        *
+    parse_error::{
+        ParseErrorTag::*,
+        ParseError
     },
     token_stream::TokenStream
 };
@@ -174,8 +174,9 @@ fn primary(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
             tokens.require(&[RightParen])?;
             node
         },
-        _ => return Err(ExpectedExpression {
-            token: tokens.prev().clone()
+        _ => return Err(ParseError {
+            token: tokens.prev().clone(),
+            tag: ExpectedExpression
         })
     });
 
