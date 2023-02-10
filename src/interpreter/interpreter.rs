@@ -1,7 +1,13 @@
 use std::process;
 use crate::{parser::ast::statement::Statement, errors::DescribableError};
 use super::{
-    statement::statement, env::Env, runtime_error::{InterpreterException, RuntimeError}
+    statement::statement,
+    env::Env,
+    runtime_error::{
+        InterpreterException,
+        RuntimeError,
+        RuntimeErrorTag::*
+    }
 };
 
 pub struct Interpreter {
@@ -24,9 +30,11 @@ impl Interpreter {
                         process::exit(1)
                     },
                     InterpreterException::Return(_) => {
-                        RuntimeError::ReturnOutOfFunction.print();
+                        RuntimeError {
+                            tag: ReturnOutOfFunction
+                        }
                     }
-                }
+                }.print();
             };
         };
     }

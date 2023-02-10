@@ -4,7 +4,11 @@ use crate::{
     lexer::token::Token
 };
 use super::{
-    runtime_error::{RuntimeError, InterpreterException}
+    runtime_error::{
+        InterpreterException,
+        RuntimeError,
+        RuntimeErrorTag::*
+    }
 };
 
 #[derive(Clone, Debug)]
@@ -51,10 +55,14 @@ impl Value {
             Value::Number(n) => Ok(format!("{n}")),
             Value::Boolean(boolean) => Ok(format!("{boolean}")),
             _ => {
-                Err(InterpreterException::Fatal(RuntimeError::ConversionError {
-                    from: format!("{:?}", self),
-                    to: "String".into(),
-                }))
+                Err(InterpreterException::Fatal(
+                    RuntimeError {
+                        tag: ConversionError {
+                            from: format!("{:?}", self),
+                            to: "String".into(),
+                        }
+                    }
+                ))
             }
         }
     }

@@ -14,14 +14,15 @@ use super::{
         self,
         *
     },
-    runtime_error::RuntimeError::*,
+    runtime_error::{
+        RuntimeError,
+        RuntimeErrorTag::*
+    },
     value::Value,
     statement::statement,
 };
 
-type ExpressionValue = Result<Value, InterpreterException>;
-
-pub fn expression(env: &mut Env, ast: &Expression) -> ExpressionValue {
+pub fn expression(env: &mut Env, ast: &Expression) -> Result<Value, InterpreterException> {
     match ast.get_node() {
         ExpressionNode::Binary(bin_expr) => binary(env, &bin_expr),
         ExpressionNode::Unary(un_expr) => unary(env, &un_expr),
@@ -57,10 +58,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                         Box::new(l.as_ref().clone() + &r.to_string())
                     )
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::Minus => {
@@ -68,10 +73,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Number(l - r)
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::Star => {
@@ -79,10 +88,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Number(l * r)
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::Circ => {
@@ -90,10 +103,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Number(l.powf(r))
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::Slash => {
@@ -102,13 +119,21 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     if r != 0.0 {
                         Value::Number(l / r)
                     } else {
-                        return Err(Fatal(DivisionByZero(node.clone())))
+                        return Err(Fatal(
+                            RuntimeError {
+                                tag: DivisionByZero(node.clone())
+                            }
+                        ))
                     }
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::EqualEqual => Value::Boolean(left == right),
@@ -118,10 +143,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Boolean(l < r)
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::Greater => {
@@ -129,10 +158,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Boolean(l > r)
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::LessEqual => {
@@ -140,10 +173,14 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Boolean(l <= r)
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
-                })),
+                _ => return Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperands {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                )),
             }
         },
         TokenTag::GreaterEqual => {
@@ -151,9 +188,11 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 (Value::Number(l), Value::Number(r)) => {
                     Value::Boolean(l >= r)
                 },
-                _ => return Err(Fatal(IncompatibleOperands {
-                    expr: node.clone(),
-                    op: node.op.clone()
+                _ => return Err(Fatal(RuntimeError {
+                    tag: IncompatibleOperands {
+                        expr: node.clone(),
+                        op: node.op.clone()
+                    }
                 })),
             }
         },
@@ -164,17 +203,21 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
 }
 
 /// Evaluate unary expression
-fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
+fn unary(env: &mut Env, node: &UnaryNode) -> Result<Value, InterpreterException> {
     let left = expression(env, node.left.as_ref())?;
 
     match node.op.tag {
         TokenTag::Minus => {
             match left {
                 Value::Number(n) => Ok(Value::Number(-n)),
-                _ => Err(Fatal(IncompatibleOperand {
-                    op: node.op.clone(),
-                    expr: node.clone()
-                }))
+                _ => Err(Fatal(
+                    RuntimeError {
+                        tag: IncompatibleOperand {
+                            expr: node.clone(),
+                            op: node.op.clone()
+                        }
+                    }
+                ))
             }
         },
         _ => unreachable!()
@@ -182,7 +225,7 @@ fn unary(env: &mut Env, node: &UnaryNode) -> ExpressionValue {
 }
 
 /// Evaluate primary expression
-fn primary(env: &mut Env, node: &PrimaryNode) -> ExpressionValue {
+fn primary(env: &mut Env, node: &PrimaryNode) -> Result<Value, InterpreterException> {
     match node {
         PrimaryNode::Literal(token) => literal(token),
         PrimaryNode::Paren {
@@ -223,7 +266,7 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                                 Err(err) => {
                                     return Err(InterpreterException::Fatal(err))
                                 },
-                                _ => {}
+                                _ => ()
                             }
                         },
                         _ => unreachable!()
@@ -239,10 +282,16 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                     _ => { Ok(Value::Null) }
                 }
             }
-            Some(_) => return Err(Fatal(ObjectIsNotCallable)),
-            None => return Err(Fatal(FunctionNotDefined {
-                name: name.to_string()
-            }))
+            Some(_) => return Err(Fatal(
+                RuntimeError {
+                    tag: ObjectIsNotCallable
+                }
+            )),
+            None => return Err(Fatal(
+                RuntimeError {
+                    tag: FunctionNotDefined { name: name.get_lexeme() }
+                }
+            ))
         }
         _ => unreachable!()
     }
@@ -253,16 +302,20 @@ fn identifier(env: &mut Env, token: &Token) -> Result<Value, InterpreterExceptio
     match &token.tag {
         TokenTag::Identifier(name) => match env.get(&name) {
             Some(val) => return Ok(val.clone()),
-            None => return Err(Fatal(NameNotDefined {
-                name: name.clone()
-            }))
+            None => return Err(Fatal(
+                RuntimeError {
+                    tag: NameNotDefined {
+                        name: name.clone()
+                    }
+                }
+            ))
         },
         _ => unreachable!()
     }
 }
 
 /// Evaluate literal value
-fn literal(token: &Token) -> ExpressionValue {
+fn literal(token: &Token) -> Result<Value, InterpreterException> {
     let value = match token.tag.clone() {
         TokenTag::Number(n) => Value::Number(n),
         TokenTag::String(s) => Value::String(Box::new(s.into())),
@@ -273,6 +326,6 @@ fn literal(token: &Token) -> ExpressionValue {
 }
 
 /// Evaluate parenthesized expression
-fn paren(env: &mut Env, expr: &Box<Expression>) -> ExpressionValue {
+fn paren(env: &mut Env, expr: &Box<Expression>) -> Result<Value, InterpreterException> {
     Ok(expression(env, expr)?)
 }

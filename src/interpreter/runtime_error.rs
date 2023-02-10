@@ -4,7 +4,7 @@ use crate::{
     },
     lexer::token::Token, parser::ast::expression::{
         BinaryNode,
-        Node, UnaryNode
+        UnaryNode
     }
 };
 
@@ -17,7 +17,12 @@ pub enum InterpreterException {
 }
 
 #[derive(Debug)]
-pub enum RuntimeError {
+pub struct RuntimeError {
+    pub tag: RuntimeErrorTag
+}
+
+#[derive(Debug)]
+pub enum RuntimeErrorTag {
     IncompatibleOperands {
         expr: BinaryNode,
         op: Token,
@@ -44,58 +49,54 @@ pub enum RuntimeError {
     }
 }
 
+impl RuntimeErrorTag {
+    pub fn to_human_readable(&self) -> String {
+        match self {
+            Self::DivisionByZero(_) => {
+                format!("Division by zero")
+            },
+            Self::ObjectIsNotCallable => {
+                format!("Object is not callable")
+            }
+            Self::ReturnOutOfFunction => {
+                format!("Cannot return value outside of the function")
+            },
+            Self::ConversionError {
+                from,
+                to
+            } => {
+                format!("Cannot convert value of type `{from}` to `{to}`")
+            },
+            Self::FunctionNotDefined { name } => {
+                format!("Function `{}` not defined", name)
+            },
+            Self::NameNotDefined { name } => {
+                format!("Name `{}` not defined", name)
+            },
+            Self::IncompatibleOperands { expr: _, op } => {
+                format!("Cannot perform `{:?}` between operands", op.tag)
+            },
+            Self::IncompatibleOperand { expr: _, op } => {
+                format!("Cannot perform `{:?}` to the operand", op.tag)
+            },
+            Self::NameRedefinition { name } => {
+                format!("Name `{}` is already defined", name)
+            },
+        }
+    }
+}
+
 impl DescribableError for RuntimeError {
     fn kind(&self) -> String {
         "RuntimeError".into()
     }
 
     fn snippet(&self) -> String {
-        match self {
-            RuntimeError::DivisionByZero(expr) => {
-                expr
-            },
-            RuntimeError::IncompatibleOperands {
-                expr,
-                op: _
-            } => {
-                expr
-            }
-            _ => todo!()
-        }.get_span().to_string()
+        // TODO: Implement
+        "".to_string()
     }
 
     fn message(&self) -> String {
-        match self {
-            RuntimeError::DivisionByZero(_) => {
-                format!("Division by zero")
-            },
-            RuntimeError::ObjectIsNotCallable => {
-                format!("Object is not callable")
-            }
-            RuntimeError::ReturnOutOfFunction => {
-                format!("Cannot return value outside of the function")
-            },
-            RuntimeError::ConversionError {
-                from,
-                to
-            } => {
-                format!("Cannot convert value of type `{from}` to `{to}`")
-            },
-            RuntimeError::FunctionNotDefined { name } => {
-                format!("Function `{}` not defined", name)
-            },
-            RuntimeError::NameNotDefined { name } => {
-                format!("Name `{}` not defined", name)
-            },
-            RuntimeError::IncompatibleOperands { expr: _, op } => {
-                format!("Cannot perform `{:?}` between operands", op.tag)
-            },
-            RuntimeError::IncompatibleOperand { expr: _, op } => {
-                format!("Cannot perform `{:?}` to the operand", op.tag)
-            },
-            RuntimeError::NameRedefinition { name } => {
-                format!("Name `{}` is already defined", name)
-            },
-        }
+        self.tag.to_human_readable()
     }
 }

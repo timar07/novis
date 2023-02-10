@@ -7,6 +7,12 @@ pub struct Token {
     pub info: DebugInfo
 }
 
+impl Token {
+    pub fn get_lexeme(&self) -> String {
+        self.info.src[self.lexeme.start..self.lexeme.end].to_string()
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 #[allow(dead_code)]
 pub enum TokenTag {

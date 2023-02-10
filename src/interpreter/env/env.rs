@@ -4,7 +4,10 @@ use std::{
 use crate::{
     interpreter::{
         value::Value,
-        runtime_error::RuntimeError
+        runtime_error::{
+            RuntimeError,
+            RuntimeErrorTag::*
+        }
     }
 };
 
@@ -117,7 +120,11 @@ impl EnvInner {
             self.hashmap.insert(name.into(), value);
             Ok(())
         } else {
-            Err(RuntimeError::NameRedefinition { name: name.into() })
+            Err(RuntimeError {
+                tag: NameRedefinition {
+                    name: name.into()
+                }
+            })
         }
     }
 

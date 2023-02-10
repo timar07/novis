@@ -11,8 +11,9 @@ use super::{
         self,
         *
     },
-    runtime_error::RuntimeError::{
-        *
+    runtime_error::{
+        RuntimeError,
+        RuntimeErrorTag::*
     },
     env::Env,
     value::Value, utils::check_condition
@@ -81,7 +82,11 @@ fn assignment(
                     _ => unreachable!()
                 }
             } else {
-                return Err(Fatal(NameNotDefined { name: id }))
+                return Err(Fatal(
+                    RuntimeError {
+                        tag: NameNotDefined { name: id }
+                    }
+                ))
             }
         }
         _ => unreachable!()
