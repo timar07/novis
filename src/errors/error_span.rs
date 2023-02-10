@@ -28,7 +28,6 @@ impl From<Token> for Span {
 impl Display for Span {
    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let info = self.clone().start.info;
-        let len = (self.end.info.col+self.end.info.len) - self.start.info.col;
         let snippet = if self.start.info.line != self.end.info.line {
             Highlighter::multiline(
                 info.src,
@@ -36,6 +35,8 @@ impl Display for Span {
                 self.end.info.line
             )
         } else {
+            let len = (self.end.info.col+self.end.info.len) - self.start.info.col;
+
             Highlighter::inline(
                 info.src,
                 info.line-1,
