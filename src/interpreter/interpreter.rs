@@ -31,6 +31,7 @@ impl Interpreter {
                     },
                     InterpreterException::Return(_) => {
                         RuntimeError {
+                            span: todo!(),
                             tag: ReturnOutOfFunction
                         }
                     }

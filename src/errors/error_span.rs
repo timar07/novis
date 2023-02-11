@@ -10,7 +10,7 @@ use std::{
 use crate::lexer::token::Token;
 use colored::*;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Span {
     pub start: Token,
     pub end: Token,
@@ -31,7 +31,7 @@ impl Display for Span {
         let snippet = if self.start.info.line != self.end.info.line {
             Highlighter::multiline(
                 info.src,
-                self.start.info.line,
+                self.start.info.line-1,
                 self.end.info.line
             )
         } else {
@@ -65,7 +65,6 @@ impl Highlighter {
         col: usize,
         len: usize
     ) -> String {
-        dbg!(src.lines().nth(line).unwrap_or(" "));
         LineFormatter::new(
             line,
             src.lines().nth(line).unwrap_or(" ").into(),
@@ -81,7 +80,7 @@ impl Highlighter {
         let mut snippet: String = String::from("");
         let mut width: usize = 0;
 
-        for n in start-1..end {
+        for n in start..end {
             let line = src.lines().nth(n).unwrap();
 
             if line.len() > width {
@@ -93,13 +92,17 @@ impl Highlighter {
                 line.into(),
                 None
             ));
+
+            if n == end-1 {
+                snippet.push_str(&LineFormatter::new(
+                    n,
+                    line.into(),
+                    Some(Highlighter::underline('_', 1, width+1))
+                ));
+            }
         }
 
-        format!(
-            "{}{}",
-            snippet,
-            Highlighter::underline('_', 8, width+1)
-        )
+        snippet
     }
 
     fn underline(ch: char, col: usize, len: usize) -> String {

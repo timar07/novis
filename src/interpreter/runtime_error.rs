@@ -1,6 +1,6 @@
 use crate::{
     errors::{
-        DescribableError
+        DescribableError, Span
     },
     lexer::token::Token, parser::ast::expression::{
         BinaryNode,
@@ -18,6 +18,7 @@ pub enum InterpreterException {
 
 #[derive(Debug)]
 pub struct RuntimeError {
+    pub span: Span,
     pub tag: RuntimeErrorTag
 }
 
@@ -92,8 +93,7 @@ impl DescribableError for RuntimeError {
     }
 
     fn snippet(&self) -> String {
-        // TODO: Implement
-        "".to_string()
+        self.span.to_string()
     }
 
     fn message(&self) -> String {

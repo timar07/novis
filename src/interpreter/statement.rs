@@ -4,7 +4,7 @@ use crate::{
         statement::Statement,
         expression::{Expression}
     },
-    interpreter::expression::expression, lexer::token::{TokenTag, Token}
+    interpreter::expression::expression, lexer::token::{TokenTag, Token}, errors::Span
 };
 use super::{
     runtime_error::InterpreterException::{
@@ -84,6 +84,7 @@ fn assignment(
             } else {
                 return Err(Fatal(
                     RuntimeError {
+                        span: Span::from(name.clone()),
                         tag: NameNotDefined { name: id }
                     }
                 ))

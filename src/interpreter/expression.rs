@@ -5,9 +5,9 @@ use crate::{
         BinaryNode,
         UnaryNode,
         PrimaryNode,
-        ExpressionNode
+        ExpressionNode, Node
     },
-    lexer::token::{TokenTag, Token}
+    lexer::token::{TokenTag, Token}, errors::Span
 };
 use super::{
     runtime_error::InterpreterException::{
@@ -60,6 +60,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -75,6 +76,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -90,6 +92,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -105,6 +108,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -121,6 +125,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     } else {
                         return Err(Fatal(
                             RuntimeError {
+                                span: node.get_span(),
                                 tag: DivisionByZero(node.clone())
                             }
                         ))
@@ -128,6 +133,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -145,6 +151,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -160,6 +167,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -175,6 +183,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                 },
                 _ => return Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperands {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -189,6 +198,7 @@ fn binary(env: &mut Env, node: &BinaryNode) -> Result<Value, InterpreterExceptio
                     Value::Boolean(l >= r)
                 },
                 _ => return Err(Fatal(RuntimeError {
+                    span: node.get_span(),
                     tag: IncompatibleOperands {
                         expr: node.clone(),
                         op: node.op.clone()
@@ -212,6 +222,7 @@ fn unary(env: &mut Env, node: &UnaryNode) -> Result<Value, InterpreterException>
                 Value::Number(n) => Ok(Value::Number(-n)),
                 _ => Err(Fatal(
                     RuntimeError {
+                        span: node.get_span(),
                         tag: IncompatibleOperand {
                             expr: node.clone(),
                             op: node.op.clone()
@@ -284,11 +295,13 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
             }
             Some(_) => return Err(Fatal(
                 RuntimeError {
+                    span: Span::from(name.clone()),
                     tag: ObjectIsNotCallable
                 }
             )),
             None => return Err(Fatal(
                 RuntimeError {
+                    span: Span::from(name.clone()),
                     tag: FunctionNotDefined { name: name.get_lexeme() }
                 }
             ))
@@ -304,6 +317,7 @@ fn identifier(env: &mut Env, token: &Token) -> Result<Value, InterpreterExceptio
             Some(val) => return Ok(val.clone()),
             None => return Err(Fatal(
                 RuntimeError {
+                    span: Span::from(token.clone()),
                     tag: NameNotDefined {
                         name: name.clone()
                     }

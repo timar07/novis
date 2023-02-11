@@ -121,6 +121,7 @@ impl EnvInner {
             Ok(())
         } else {
             Err(RuntimeError {
+                span: todo!(),
                 tag: NameRedefinition {
                     name: name.into()
                 }

@@ -54,9 +54,10 @@ impl Value {
             Value::String(str) => Ok(format!("{str}")),
             Value::Number(n) => Ok(format!("{n}")),
             Value::Boolean(boolean) => Ok(format!("{boolean}")),
-            _ => {
+            val => {
                 Err(InterpreterException::Fatal(
                     RuntimeError {
+                        span: todo!(),
                         tag: ConversionError {
                             from: format!("{:?}", self),
                             to: "String".into(),
