@@ -59,6 +59,9 @@ impl Display for Span {
 struct Highlighter;
 
 impl Highlighter {
+    /// Highlight inline span, for example:
+    ///     1 | print foo(2+2)/0;
+    ///         ~~~~~~~~~~~~~~~~^
     pub fn inline(
         src: Rc<String>,
         line: usize,
@@ -72,6 +75,11 @@ impl Highlighter {
         )
     }
 
+    /// Highlight multiline span, for example:
+    ///     1 | print foo(123 /
+    ///     2 |           (2+3-5)
+    ///     3 |       );
+    ///         ________________^
     pub fn multiline(
         src: Rc<String>,
         start: usize,
@@ -112,6 +120,13 @@ impl Highlighter {
         snippet
     }
 
+    /// Util function for creating underlines.
+    ///
+    /// # Examples
+    /// ```
+    /// let foo = Highlighter::underline('~', 1, 10);
+    /// assert_eq!(foo, "~~~~~~~~~^".to_string().red());
+    /// ```
     fn underline(ch: char, col: usize, len: usize) -> String {
         format!(
             "{}{}{}",
@@ -124,6 +139,13 @@ impl Highlighter {
 
 struct LineFormatter;
 impl LineFormatter {
+    /// Line formatting util.
+    /// # Examples
+    /// ```
+    /// let line = String::from("foo(\"some code\");")
+    /// let fmt_line = LineFormatter::new(1, &line, None);
+    /// println!(fmt_line); // 1 | foo("some code");
+    /// ```
     pub fn new(number: usize, line: &String, extra: Option<String>) -> String {
         let snippet_prefix = format!(
             "    {} {} ",
