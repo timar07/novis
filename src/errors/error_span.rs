@@ -41,7 +41,7 @@ impl Display for Span {
                 info.src,
                 info.line-1,
                 info.col,
-                len
+                if len == 0 { 1 } else { len }
             )
         };
 
@@ -65,10 +65,10 @@ impl Highlighter {
         col: usize,
         len: usize
     ) -> String {
-        // FIXME: Unsafe unwrap
+        dbg!(src.lines().nth(line).unwrap_or(" "));
         LineFormatter::new(
             line,
-            src.lines().nth(line).unwrap().into(),
+            src.lines().nth(line).unwrap_or(" ").into(),
             Some(Highlighter::underline('~', col, len))
         )
     }
