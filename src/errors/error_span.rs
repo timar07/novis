@@ -93,17 +93,18 @@ impl Highlighter {
                 width = line.len();
             }
 
-            snippet.push_str(&LineFormatter::new(
-                n,
-                line,
-                None
-            ));
-
+            // Last line ends with highlight
             if n == end-1 {
                 snippet.push_str(&LineFormatter::new(
                     n,
                     line,
                     Some(Highlighter::underline('_', 1, width+1))
+                ));
+            } else {
+                snippet.push_str(&LineFormatter::new(
+                    n,
+                    line,
+                    None
                 ));
             }
         }
