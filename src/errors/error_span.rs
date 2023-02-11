@@ -67,7 +67,7 @@ impl Highlighter {
     ) -> String {
         LineFormatter::new(
             line,
-            src.lines().nth(line).unwrap_or(" ").into(),
+            &src.lines().nth(line).unwrap_or(" ").to_string(),
             Some(Highlighter::underline('~', col, len))
         )
     }
@@ -79,24 +79,30 @@ impl Highlighter {
     ) -> String {
         let mut snippet: String = String::from("");
         let mut width: usize = 0;
+        let lines = src
+            .lines()
+            .map(|line| { line.to_string() })
+            .collect::<Vec<String>>();
 
-        for n in start..end {
-            let line = src.lines().nth(n).unwrap();
+        let excerpt = lines[start..end]
+            .iter()
+            .enumerate();
 
+        for (n, line) in excerpt {
             if line.len() > width {
                 width = line.len();
             }
 
             snippet.push_str(&LineFormatter::new(
                 n,
-                line.into(),
+                line,
                 None
             ));
 
             if n == end-1 {
                 snippet.push_str(&LineFormatter::new(
                     n,
-                    line.into(),
+                    line,
                     Some(Highlighter::underline('_', 1, width+1))
                 ));
             }
@@ -117,7 +123,7 @@ impl Highlighter {
 
 struct LineFormatter;
 impl LineFormatter {
-    pub fn new(number: usize, line: String, extra: Option<String>) -> String {
+    pub fn new(number: usize, line: &String, extra: Option<String>) -> String {
         let snippet_prefix = format!(
             "    {} {} ",
             (number+1).to_string(),
