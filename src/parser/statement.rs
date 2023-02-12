@@ -62,6 +62,7 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 fn func_definition(
     tokens: &mut TokenStream
 ) -> Result<Statement, ParseError> {
+    let keyword = tokens.prev().clone();
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
         _ => return Err(ParseError {
@@ -77,6 +78,7 @@ fn func_definition(
     let body = statement(tokens)?;
 
     Ok(Statement::Func {
+        keyword: keyword,
         name: identifier,
         params: params,
         body: Rc::new(body)
@@ -122,6 +124,7 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
 /// ```
 fn r#return(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
     Ok(Statement::Return {
+        keyword: tokens.prev().clone(),
         expr: expression(tokens)?
     })
 }

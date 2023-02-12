@@ -31,7 +31,7 @@ impl Interpreter {
                     },
                     InterpreterException::Return(_) => {
                         RuntimeError {
-                            span: todo!(),
+                            span: stmt.get_span(),
                             tag: ReturnOutOfFunction
                         }
                     }

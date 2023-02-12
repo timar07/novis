@@ -1,10 +1,19 @@
 use std::{rc::Rc};
 use crate::{
+    lexer::token::{
+        TokenTag,
+        Token
+    },
     parser::ast::{
         statement::Statement,
-        expression::{Expression}
+        expression::{
+            Expression
+        }
     },
-    interpreter::expression::expression, lexer::token::{TokenTag, Token}, errors::Span
+    interpreter::expression::{
+        Evaluatable
+    },
+    errors::Span
 };
 use super::{
     runtime_error::InterpreterException::{
@@ -49,15 +58,17 @@ pub fn statement(env: &mut Env, statement: &Statement) -> Result<Value, Interpre
             expr
         } => var_definition(env, name, expr),
         Statement::Func {
+            keyword: _,
             name,
             params,
             body
         } => func_definition(env, name, params, body),
         Statement::Return {
+            keyword: _,
             expr
         } => r#return(env, expr),
         Statement::Expression { expr } => {
-            match expression(env, expr) {
+            match expr.eval(env) {
                 Ok(_) => Ok(Value::Null),
                 Err(error) => Err(error),
             }
@@ -75,7 +86,7 @@ fn assignment(
         TokenTag::Identifier(id) => {
             let lval = env.get(&id);
             if lval.is_some() {
-                let rval = expression(env, expr)?;
+                let rval = expr.eval(env)?;
 
                 match operator.tag {
                     TokenTag::Equal => env.set(&id, rval).unwrap(),
@@ -118,7 +129,7 @@ fn r#return(
     env: &mut Env,
     expr: &Box<Expression>,
 ) -> Result<Value, InterpreterException> {
-    Err(Return(expression(env, expr)?))
+    Err(Return(expr.eval(env)?))
 }
 
 fn var_definition(
@@ -128,7 +139,7 @@ fn var_definition(
 ) -> Result<Value, InterpreterException> {
     match name.tag.clone() {
         TokenTag::Identifier(id) => {
-            let val = expression(env, expr)?;
+            let val = expr.eval(env)?;
             env.define(&id, val).unwrap();
         }
         _ => unreachable!()
@@ -162,7 +173,7 @@ fn r#loop(
     condition: &Box<Expression>,
     body: &Box<Statement>
 ) -> Result<Value, InterpreterException> {
-    while expression(env, condition)?.to_boolean().unwrap() == Value::Boolean(true) {
+    while check_condition(env, condition)? {
         statement(env, body)?;
     }
 
@@ -205,7 +216,7 @@ fn group(env: &mut Env, items: &Vec<Statement>) -> Result<Value, InterpreterExce
 }
 
 fn print(env: &mut Env, expr: &Box<Expression>) -> Result<Value, InterpreterException> {
-    match expression(env, &expr) {
+    match expr.eval(env) {
         Ok(val) => println!("{}", val.to_string()?),
         Err(err) => return Err(err),
     };

@@ -72,7 +72,7 @@ fn comparison(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
 }
 
 /// # Rule
-/// ```
+/// ```ebnf
 /// term = factor (('+' | '-') factor)*;
 /// ```
 fn term(tokens: &mut TokenStream) -> Result<Box<Expression>, ParseError> {
