@@ -4,7 +4,6 @@ use crate::{
         FileStream
     },
     errors::{
-        DescribableError,
         DebugInfo,
     },
     lexer::token::{
@@ -48,13 +47,13 @@ impl Lexer {
         }
     }
 
-    pub fn lex(&mut self) -> Vec<Token> {
+    pub fn lex(&mut self) -> Result<Vec<Token>, Vec<LexicalError>> {
         let mut tokens: Vec<Token> = vec![];
+        let mut errors: Vec<LexicalError> = vec![];
 
         loop  {
             match self.lex_token() {
                 Ok(token) => {
-                    // dbg!(&token);
                     tokens.push(token.clone());
 
                     if token.tag == TokenTag::EndOfFile {
@@ -62,12 +61,16 @@ impl Lexer {
                     }
                  }
                 Err(error) => {
-                    error.print()
+                    errors.push(error)
                 }
             }
         }
 
-        tokens
+        if errors.is_empty() {
+            Ok(tokens)
+        } else {
+            Err(errors)
+        }
     }
 
     fn lex_token(&mut self) -> Result<Token, LexicalError> {

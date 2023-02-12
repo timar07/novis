@@ -1,7 +1,10 @@
 use std::process;
-use crate::{parser::ast::statement::Statement, errors::DescribableError};
+use crate::{
+    parser::ast::statement::Statement,
+    errors::DescribableError
+};
 use super::{
-    statement::statement,
+    statement::Executable,
     env::Env,
     runtime_error::{
         InterpreterException,
@@ -23,19 +26,19 @@ impl Interpreter {
         let mut global_env = Box::new(Env::new());
 
         for stmt in &self.statements {
-            if let Err(error) = statement(global_env.as_mut(), stmt) {
+            if let Err(error) = stmt.run(global_env.as_mut()) {
                 match error {
                     InterpreterException::Fatal(fatal) => {
-                        fatal.print();
+                        eprint!("{:?}", fatal);
                         process::exit(1)
                     },
                     InterpreterException::Return(_) => {
                         RuntimeError {
-                            span: stmt.get_span(),
+                            span: todo!(),
                             tag: ReturnOutOfFunction
                         }
                     }
-                }.print();
+                };
             };
         };
     }

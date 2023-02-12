@@ -9,11 +9,18 @@ use crate::{
             RuntimeError,
             RuntimeErrorTag::*
         },
-        value::Value, env::Env, statement::statement
-    }, lexer::token::{TokenTag, Token}, errors::Span
+        value::Value,
+        env::Env,
+        statement::Executable,
+    },
+    lexer::token::{
+        TokenTag,
+        Token
+    },
+    errors::Span
 };
 
-use super::eval_trait::Evaluatable;
+use super::evaluatable::Evaluatable;
 
 impl Evaluatable for PrimaryNode {
     fn eval(&self, env: &mut Env) -> Result<Value, InterpreterException> {
@@ -65,7 +72,7 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                     }
                 }
 
-                match statement(closure, body.as_ref()) {
+                match body.as_ref().run(closure) {
                     Err(InterpreterException::Return(value)) => {
                         closure.leave();
                         *env = global_env;

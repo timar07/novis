@@ -9,11 +9,11 @@ use crate::{
     }
 };
 
-use super::eval_trait::Evaluatable;
+use super::evaluatable::Evaluatable;
 
 impl Evaluatable for Expression {
     fn eval(&self, env: &mut Env) -> Result<Value, InterpreterException> {
-        self.eval(env)
+        self.get_node().eval(env)
     }
 }
 

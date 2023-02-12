@@ -1,7 +1,7 @@
-mod eval_trait;
+mod evaluatable;
 mod binary;
 mod unary;
 mod primary;
 
-pub use eval_trait::Evaluatable;
+pub use evaluatable::Evaluatable;
 pub mod expression;

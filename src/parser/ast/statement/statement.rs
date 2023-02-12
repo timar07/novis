@@ -1,14 +1,22 @@
+use std::rc::Rc;
+
 use crate::{
     parser::ast::expression::{Expression},
     lexer::token::Token, errors::Span
 };
 
+#[derive(Debug)]
 pub enum Statement {
     Group(Group),
     Expr(ExprStatment),
     Retrun(Return),
+    Print(Print),
     Let(Let),
     Func(Func),
+    Cond(Cond),
+    Loop(Loop),
+    Assign(Assignment),
+    Noop
 }
 
 /// Group statement representation.
@@ -16,10 +24,11 @@ pub enum Statement {
 /// {   <stmts>   }
 /// ^ - lcurly    ^ - rcurly
 /// ```
+#[derive(Debug)]
 pub struct Group {
-    stmts: Vec<Statement>,
-    lcurly: Token,
-    rcurly: Token
+    pub stmts: Vec<Statement>,
+    pub lcurly: Token,
+    pub rcurly: Token
 }
 
 impl From<Group> for Span {
@@ -35,13 +44,14 @@ impl From<Group> for Span {
 /// ```text
 /// <expr>
 /// ```
+#[derive(Debug)]
 pub struct ExprStatment {
-    expr: Box<Expression>,
+    pub expr: Box<Expression>,
 }
 
 impl From<ExprStatment> for Span {
     fn from(stmt: ExprStatment) -> Self {
-        Span::from(*stmt.expr.as_ref())
+        Span::from(stmt.expr.as_ref().clone())
     }
 }
 
@@ -50,16 +60,17 @@ impl From<ExprStatment> for Span {
 /// return <expr>
 /// ^^^^^^ - keyword
 /// ```
+#[derive(Debug)]
 pub struct Return {
-    keyword: Token,
-    expr: Box<Expression>,
+    pub keyword: Token,
+    pub expr: Box<Expression>,
 }
 
 impl From<Return> for Span {
     fn from(stmt: Return) -> Self {
         Self {
             start: stmt.keyword,
-            end: Span::from(*stmt.expr.as_ref()).end
+            end: Span::from(stmt.expr.as_ref().clone()).end
         }
     }
 }
@@ -69,18 +80,19 @@ impl From<Return> for Span {
 /// let <name>     <- <expr>
 /// ^^^ - keyword  ^^ - operator
 /// ```
+#[derive(Debug)]
 pub struct Let {
-    keyword: Token,
-    name: Token,
-    operator: Token,
-    expr: Box<Expression>
+    pub keyword: Token,
+    pub name: Token,
+    pub operator: Token,
+    pub expr: Box<Expression>
 }
 
 impl From<Let> for Span {
     fn from(stmt: Let) -> Self {
         Self {
             start: stmt.keyword,
-            end: Span::from(*stmt.expr.as_ref()).end
+            end: Span::from(stmt.expr.as_ref().clone()).end
         }
     }
 }
@@ -90,17 +102,18 @@ impl From<Let> for Span {
 /// <name> <- <expr>
 ///        ^^ - operator
 /// ```
+#[derive(Debug)]
 pub struct Assignment {
-    operator: Token,
-    name: Token,
-    expr: Box<Expression>
+    pub operator: Token,
+    pub name: Token,
+    pub expr: Box<Expression>
 }
 
 impl From<Assignment> for Span {
     fn from(stmt: Assignment) -> Self {
         Self {
             start: stmt.name,
-            end: Span::from(*stmt.expr.as_ref()).end
+            end: Span::from(stmt.expr.as_ref().clone()).end
         }
     }
 }
@@ -110,19 +123,17 @@ impl From<Assignment> for Span {
 /// func <name><params> -> <body>
 /// ^^^^ - keyword
 /// ```
+#[derive(Debug)]
 pub struct Func {
-    keyword: Token,
-    name: Token,
-    params: Vec<Token>,
-    body: Box<Group>
+    pub keyword: Token,
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub body: Rc<Group>
 }
 
 impl From<Func> for Span {
     fn from(stmt: Func) -> Self {
-        Self {
-            start: stmt.keyword,
-            end: Span::from(*stmt.body.as_ref()).end
-        }
+        Span::from(stmt.keyword)
     }
 }
 
@@ -131,18 +142,16 @@ impl From<Func> for Span {
 /// loop <condition> <body>
 /// ^^^^ - keyword
 /// ```
+#[derive(Debug)]
 pub struct Loop {
-    keyword: Token,
-    condition: Box<Expression>,
-    body: Box<Group>
+    pub keyword: Token,
+    pub condition: Box<Expression>,
+    pub body: Box<Group>
 }
 
 impl From<Loop> for Span {
     fn from(stmt: Loop) -> Self {
-        Self {
-            start: stmt.keyword,
-            end: Span::from(*stmt.body.as_ref()).end
-        }
+        Span::from(stmt.keyword)
     }
 }
 
@@ -151,23 +160,17 @@ impl From<Loop> for Span {
 /// if <condition> <if_block> <else_block>?
 /// ^^ - keyword
 /// ```
+#[derive(Debug)]
 pub struct Cond {
-    keyword: Token,
-    condition: Box<Expression>,
-    if_block: Box<Group>,
-    else_block: Option<Box<Group>>
+    pub keyword: Token,
+    pub condition: Box<Expression>,
+    pub if_block: Box<Group>,
+    pub else_block: Option<Box<Group>>
 }
 
 impl From<Cond> for Span {
     fn from(stmt: Cond) -> Self {
-        Self {
-            start: Span::from(stmt.keyword).start,
-            end: if let Some(block) = stmt.else_block {
-                Span::from(*block.as_ref()).end
-            } else {
-                Span::from(*stmt.if_block.as_ref()).end
-            }
-        }
+        Span::from(stmt.keyword)
     }
 }
 
@@ -178,16 +181,14 @@ impl From<Cond> for Span {
 /// print <expr>
 /// ^^^^^ - keyword
 /// ```
+#[derive(Debug)]
 pub struct Print {
-    keyword: Token,
-    expr: Box<Expression>,
+    pub keyword: Token,
+    pub expr: Box<Expression>,
 }
 
 impl From<Print> for Span {
     fn from(stmt: Print) -> Self {
-        Self {
-            start: stmt.keyword,
-            end: Span::from(*stmt.expr.as_ref()).end
-        }
+        Span::from(stmt.keyword)
     }
 }

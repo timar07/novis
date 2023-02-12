@@ -6,6 +6,7 @@ mod file_stream;
 
 use std::time::{Instant};
 use colored::Colorize;
+use errors::DescribableError;
 use std::{env, process::exit};
 use interpreter::Interpreter;
 use lexer::Lexer;
@@ -14,11 +15,21 @@ use parser::Parser;
 fn run(path: &String) {
     let mut lexer = Lexer::from_file(path);
 
-    let tokens = lexer.lex();
-    let mut parser = Parser::new(tokens);
-    let statements = parser.parse();
+    let ast = match lexer.lex() {
+        Ok(tokens) => match Parser::new(tokens).parse() {
+            Ok(ast) => Ok(ast),
+            Err(errors) => {
+                errors.iter().for_each(|e| { e.print() });
+                Err(())
+            },
+        },
+        Err(errors) => {
+            errors.iter().for_each(|e| { e.print() });
+            Err(())
+        }
+    };
 
-    if let Ok(statements) = statements {
+    if let Ok(statements) = ast {
         let interpreter = Interpreter::new(statements);
         interpreter.interpret();
     }

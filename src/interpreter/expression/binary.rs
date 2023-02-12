@@ -1,7 +1,5 @@
-use std::ops::DerefMut;
-
 use crate::{
-    parser::ast::expression::{BinaryNode, Node},
+    parser::ast::expression::{BinaryNode},
     interpreter::{
         runtime_error::{
             InterpreterException::{
@@ -12,10 +10,10 @@ use crate::{
             RuntimeErrorTag::*
         },
         value::Value, env::Env
-    }, lexer::token::TokenTag
+    }, lexer::token::TokenTag, errors::Span
 };
 
-use super::eval_trait::Evaluatable;
+use super::evaluatable::Evaluatable;
 
 impl Evaluatable for BinaryNode {
     fn eval(&self, env: &mut Env) -> Result<Value, InterpreterException> {
@@ -45,7 +43,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -61,7 +59,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -77,7 +75,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -93,7 +91,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -110,7 +108,7 @@ impl Evaluatable for BinaryNode {
                         } else {
                             return Err(Fatal(
                                 RuntimeError {
-                                    span: self.get_span(),
+                                    span: Span::from(self.clone()),
                                     tag: DivisionByZero(self.clone())
                                 }
                             ))
@@ -118,7 +116,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -136,7 +134,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -152,7 +150,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -168,7 +166,7 @@ impl Evaluatable for BinaryNode {
                     },
                     _ => return Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperands {
                                 expr: self.clone(),
                                 op: self.op.clone()
@@ -183,7 +181,7 @@ impl Evaluatable for BinaryNode {
                         Value::Boolean(l >= r)
                     },
                     _ => return Err(Fatal(RuntimeError {
-                        span: self.get_span(),
+                        span: Span::from(self.clone()),
                         tag: IncompatibleOperands {
                             expr: self.clone(),
                             op: self.op.clone()

@@ -1,4 +1,5 @@
 use std::rc::Rc;
+
 use crate::{
     lexer::token::{
         TokenTag, Token
@@ -12,7 +13,20 @@ use crate::{
         }
     }
 };
-use super::{expression::expression};
+use super::{
+    ast::statement::{
+        Func,
+        Group,
+        ExprStatment,
+        Assignment,
+        Let,
+        Print,
+        Cond,
+        Loop,
+        Return
+    }
+};
+use crate::parser::expression::expression;
 
 /// This function implements statement parsing
 /// # Arguments
@@ -24,44 +38,37 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
     let token = tokens.accept();
 
     let stmt = match token.tag {
-        TokenTag::Print => print(tokens),
-        TokenTag::If => cond(tokens),
-        TokenTag::Loop => r#loop(tokens),
-        // TokenTag::Repeat => repeat(tokens),
-        TokenTag::LeftCurly => group(tokens),
-        TokenTag::Let => var_definition(tokens),
-        TokenTag::Func => func_definition(tokens),
-        TokenTag::Return => r#return(tokens),
-        _ => {
-            if tokens.current().tag == TokenTag::LeftParen {
-                tokens.discard(); // push token back
-                expr_stmt(tokens)
+        TokenTag::Print     => Statement::Print(print(tokens)?),
+        TokenTag::If        => Statement::Cond(cond(tokens)?),
+        TokenTag::Loop      => Statement::Loop(r#loop(tokens)?),
+        TokenTag::LeftCurly => Statement::Group(group(tokens)?),
+        TokenTag::Let       => Statement::Let(var_definition(tokens)?),
+        TokenTag::Func      => Statement::Func(func_definition(tokens)?),
+        TokenTag::Return    => Statement::Retrun(r#return(tokens)?),
+        TokenTag::Identifier(_) => {
+            if tokens.match_next(&[TokenTag::ArrowLeft]) {
+                Statement::Assign(assignment(tokens)?)
             } else {
-                assignment(tokens)
+                Statement::Expr(expr_stmt(tokens)?)
             }
+        },
+        _ => {
+            tokens.discard(); // discard the token we accepted
+            Statement::Expr(expr_stmt(tokens)?)
         }
     };
 
-    match stmt {
-        Ok(stmt) => {
-            if tokens.prev().tag != TokenTag::RightCurly {
-                tokens.require(&[TokenTag::Semicolon])?;
-            }
-
-            Ok(stmt)
-        },
-        Err(err) => Err(err)
-    }
+    Ok(stmt)
 }
 
 /// # Rule
 /// Function definition matches following grammary:
-/// ```
+/// ```ebnf
 /// func = 'func' identifier (params) -> statement;
 /// ```
 fn func_definition(
     tokens: &mut TokenStream
-) -> Result<Statement, ParseError> {
+) -> Result<Func, ParseError> {
     let keyword = tokens.prev().clone();
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
@@ -75,13 +82,13 @@ fn func_definition(
 
     tokens.require(&[TokenTag::ArrowRight])?;
 
-    let body = statement(tokens)?;
+    let body = group(tokens)?;
 
-    Ok(Statement::Func {
+    Ok(Func {
         keyword: keyword,
         name: identifier,
         params: params,
-        body: Rc::new(body)
+        body: Rc::new(body),
     })
 }
 
@@ -119,61 +126,48 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
 
 /// # Rule
 /// Return statement matches following grammary:
+/// ```ebnf
+/// return = 'return' expression ';';
 /// ```
-/// return = 'return' expression;
-/// ```
-fn r#return(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
-    Ok(Statement::Return {
+fn r#return(tokens: &mut TokenStream) -> Result<Return, ParseError> {
+    let res = Ok(Return {
         keyword: tokens.prev().clone(),
-        expr: expression(tokens)?
-    })
+        expr: expression(tokens)?,
+    });
+    tokens.require(&[TokenTag::Semicolon])?;
+    res
 }
 
 /// # Rule
 /// Loop statement matches following grammary:
-/// ```
+/// ```ebnf
 /// loop = 'loop' expression group;
 /// ```
-fn r#loop(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
-    let condition = expression(tokens);
-    let body = statement(tokens);
-
-    Ok(Statement::Loop {
-        condition: condition?,
-        body: Box::new(body?)
+fn r#loop(tokens: &mut TokenStream) -> Result<Loop, ParseError> {
+    Ok(Loop {
+        keyword: tokens.prev().clone(),
+        condition: expression(tokens)?,
+        body: Box::new(group(tokens)?),
     })
 }
-
-/// # Rule
-/// Repeat statement matches following grammary:
-/// ```ebnf
-/// repeat = 'repeat' expression group;
-/// ```
-// fn repeat(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
-//     let times = expression(tokens);
-//     let body = statement(tokens);
-
-//     Ok(Statement::Repeat {
-//         times: times?,
-//         body: Box::new(body?)
-//     })
-// }
 
 /// # Rule
 /// Conditional statement matches following grammary:
 /// ```ebnf
 /// cond = 'if' expression group ('else' group)?;
 /// ```
-fn cond(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
+fn cond(tokens: &mut TokenStream) -> Result<Cond, ParseError> {
+    let keyword = tokens.prev().clone();
     let condition = expression(tokens);
-    let if_block = statement(tokens);
+    let if_block = group(tokens);
     let mut else_block = None;
 
     if tokens.match_next(&[TokenTag::Else]) {
-        else_block = Some(Box::new(statement(tokens)?));
+        else_block = Some(Box::new(group(tokens)?));
     }
 
-    Ok(Statement::Cond {
+    Ok(Cond {
+        keyword: keyword,
         condition: condition?,
         if_block: Box::new(if_block?),
         else_block: else_block
@@ -183,18 +177,23 @@ fn cond(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 /// # Rule
 /// Group statement matches following grammary:
 /// ```ebnf
-/// group = '{' statement* '}' ';';
+/// group = '{' statement* '}';
 /// ```
-fn group(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
+fn group(tokens: &mut TokenStream) -> Result<Group, ParseError> {
+    let lcurly = tokens.prev().clone();
     let mut group = vec![];
+
+    tokens.require(&[TokenTag::LeftCurly])?;
 
     while tokens.current().tag != TokenTag::RightCurly {
         group.push(statement(tokens)?);
     }
 
-    tokens.accept();
-
-    Ok(Statement::Group(group))
+    Ok(Group {
+        lcurly: lcurly,
+        stmts: group,
+        rcurly: tokens.accept().clone(),
+    })
 }
 
 /// # Rule
@@ -202,20 +201,25 @@ fn group(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
 /// ```ebnf
 /// print = 'print' expression ';';
 /// ```
-fn print(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
-    Ok(Statement::Print {
+fn print(tokens: &mut TokenStream) -> Result<Print, ParseError> {
+    let res = Ok(Print {
+        keyword: tokens.prev().clone(),
         expr: expression(tokens)?,
-    })
+    });
+
+    tokens.require(&[TokenTag::Semicolon])?;
+    res
 }
 
 /// # Rule
 /// Variable definition matches following grammary:
-/// ```
+/// ```ebnf
 /// define = 'let' identifier '<-' expression ';';
 /// ```
 fn var_definition(
     tokens: &mut TokenStream
-) -> Result<Statement, ParseError> {
+) -> Result<Let, ParseError> {
+    let keyword = tokens.prev().clone();
     let identifier = match tokens.current().tag {
         TokenTag::Identifier(_) => tokens.accept().clone(),
         _ => {
@@ -226,48 +230,54 @@ fn var_definition(
         }
     };
 
-    tokens.require(&[TokenTag::ArrowLeft])?;
+    let operator = tokens.require(&[TokenTag::ArrowLeft])?;
 
-    Ok(Statement::Let {
+    let res = Ok(Let {
+        keyword: keyword,
         name: identifier,
-        expr: expression(tokens)?
-    })
+        operator: operator.clone(),
+        expr: expression(tokens)?,
+    });
+
+    tokens.require(&[TokenTag::Semicolon])?;
+    res
 }
 
 /// # Rule
 /// Variable assignment matches following grammary:
-/// ```
-/// assign = identifier ('=' | '+=' | '-=' | '*=' | "/=") expression ';';
+/// ```ebnf
+/// assign = identifier ('<-') expression ';';
 /// ```
 fn assignment(
     tokens: &mut TokenStream,
-) -> Result<Statement, ParseError> {
+) -> Result<Assignment, ParseError> {
     let identifier = tokens.prev().clone();
 
     tokens.require(&[
-        TokenTag::Equal,
-        TokenTag::PlusEqual,
-        TokenTag::MinusEqual,
-        TokenTag::StarEqual,
-        TokenTag::SlashEqual
+        TokenTag::ArrowLeft
     ])?;
 
-    Ok(Statement::Assignment {
+    let res = Ok(Assignment {
         operator: tokens.prev().clone(),
         name: identifier,
         expr: expression(tokens)?
-    })
+    });
+
+    tokens.require(&[TokenTag::Semicolon])?;
+    res
 }
 
 /// # Rule
 /// Expression statement matches following grammary:
-/// ```
+/// ```ebnf
 /// expr_stmt = expression ';';
 /// ```
 fn expr_stmt(
     tokens: &mut TokenStream,
-) -> Result<Statement, ParseError> {
-    Ok(Statement::Expression {
+) -> Result<ExprStatment, ParseError> {
+    let res = Ok(ExprStatment {
         expr: expression(tokens)?
-    })
+    });
+    tokens.require(&[TokenTag::Semicolon])?;
+    res
 }

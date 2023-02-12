@@ -1,5 +1,5 @@
 use crate::{
-    parser::ast::expression::{UnaryNode, Node},
+    parser::ast::expression::{UnaryNode},
     interpreter::{
         runtime_error::{
             InterpreterException::{
@@ -10,10 +10,10 @@ use crate::{
             RuntimeErrorTag::*
         },
         value::Value, env::Env
-    }, lexer::token::TokenTag
+    }, lexer::token::TokenTag, errors::Span
 };
 
-use super::eval_trait::Evaluatable;
+use super::evaluatable::Evaluatable;
 
 impl Evaluatable for UnaryNode {
     fn eval(&self, env: &mut Env) -> Result<Value, InterpreterException> {
@@ -25,7 +25,7 @@ impl Evaluatable for UnaryNode {
                     Value::Number(n) => Ok(Value::Number(-n)),
                     _ => Err(Fatal(
                         RuntimeError {
-                            span: self.get_span(),
+                            span: Span::from(self.clone()),
                             tag: IncompatibleOperand {
                                 expr: self.clone(),
                                 op: self.op.clone()

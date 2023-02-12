@@ -1,6 +1,6 @@
 use std::{rc::Rc};
 use crate::{
-    parser::ast::statement::Statement,
+    parser::ast::statement::Group,
     lexer::token::Token
 };
 use super::{
@@ -19,7 +19,7 @@ pub enum Value {
     Function {
         params: Vec<Token>,
         name: Token,
-        body: Rc<Statement>,
+        body: Rc<Group>,
     },
     Null,
 }
@@ -54,7 +54,7 @@ impl Value {
             Value::String(str) => Ok(format!("{str}")),
             Value::Number(n) => Ok(format!("{n}")),
             Value::Boolean(boolean) => Ok(format!("{boolean}")),
-            val => {
+            _ => {
                 Err(InterpreterException::Fatal(
                     RuntimeError {
                         span: todo!(),

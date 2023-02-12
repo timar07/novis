@@ -10,74 +10,62 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Expression {
-    node: ExpressionNode,
-}
-
-impl Expression {
-    pub fn create(
-        node: ExpressionNode,
-    ) -> Box<Self> {
-        Box::new(Self {
-            node: node,
-        })
-    }
-
-    pub fn get_node(&self) -> &ExpressionNode {
-        &self.node
-    }
-}
-
-impl From<Expression> for Span {
-    fn from(expr: Expression) -> Self {
-        Span::from(expr.get_node().clone())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum ExpressionNode {
+pub enum Node {
     Primary(PrimaryNode),
     Unary(UnaryNode),
     Binary(BinaryNode)
 }
 
-impl From<ExpressionNode> for Span {
-    fn from(node: ExpressionNode) -> Span {
+
+impl Node {
+    pub fn create(
+        node: Node,
+    ) -> Box<Self> {
+        Box::new(node)
+    }
+}
+
+impl From<Node> for Span {
+    fn from(node: Node) -> Span {
         match node {
-            ExpressionNode::Primary(primary) => Span::from(primary),
-            ExpressionNode::Unary(node) => Span::from(node),
-            ExpressionNode::Binary(node) => Span::from(node)
+            Node::Primary(node) => node.into(),
+            Node::Unary(node) => node.into(),
+            Node::Binary(node) => node.into()
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct BinaryNode {
-    pub left: Box<Expression>,
-    pub right: Box<Expression>,
+    pub left: Box<Node>,
+    pub right: Box<Node>,
     pub op: Token,
 }
 
 impl From<BinaryNode> for Span {
-    fn from(node: BinaryNode) -> Span {
+    fn from(node: BinaryNode) -> Self {
+        let left: Span = node.left.as_ref().clone().into();
+        let right: Span = node.right.as_ref().clone().into();
+
         Span {
-            start: Span::from(node.left.get_node().clone()).start,
-            end: Span::from(node.right.get_node().clone()).end
+            start: left.start,
+            end: right.end
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct UnaryNode {
-    pub left: Box<Expression>,
+    pub left: Box<Node>,
     pub op: Token,
 }
 
 impl From<UnaryNode> for Span {
     fn from(node: UnaryNode) -> Span {
+        let left: Span = node.left.as_ref().clone().into();
         Span {
             start: node.op.clone(),
-            end: Span::from(node.left.get_node().clone()).end
+            end: left.end
         }
     }
 }
@@ -88,12 +76,12 @@ pub enum PrimaryNode {
     Paren {
         lparen: Token,
         rparen: Token,
-        expr: Box<Expression>
+        expr: Box<Node>
     },
     Identifier(Token),
     Call {
         name: Token,
-        args: Vec<Box<Expression>>,
+        args: Vec<Box<Node>>,
         rparen: Token
     }
 }
