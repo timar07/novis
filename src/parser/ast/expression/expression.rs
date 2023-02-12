@@ -35,12 +35,12 @@ pub enum ExpressionNode {
     Binary(BinaryNode)
 }
 
-impl Node for ExpressionNode {
-    fn get_span(&self) -> Span {
-        match self {
-            Self::Primary(node) => node.get_span(),
-            Self::Unary(node) => node.get_span(),
-            Self::Binary(node) => node.get_span()
+impl From<ExpressionNode> for Span {
+    fn from(node: ExpressionNode) -> Span {
+        match node {
+            ExpressionNode::Primary(primary) => Span::from(primary),
+            ExpressionNode::Unary(node) => Span::from(node),
+            ExpressionNode::Binary(node) => Span::from(node)
         }
     }
 }
@@ -52,11 +52,11 @@ pub struct BinaryNode {
     pub op: Token,
 }
 
-impl Node for BinaryNode {
-    fn get_span(&self) -> Span {
+impl From<BinaryNode> for Span {
+    fn from(node: BinaryNode) -> Span {
         Span {
-            start: self.left.get_node().get_span().start,
-            end: self.right.get_node().get_span().end
+            start: Span::from(*node.left.get_node()).start,
+            end: Span::from(*node.right.get_node()).end
         }
     }
 }
@@ -67,11 +67,11 @@ pub struct UnaryNode {
     pub op: Token,
 }
 
-impl Node for UnaryNode {
-    fn get_span(&self) -> Span {
+impl From<UnaryNode> for Span {
+    fn from(node: UnaryNode) -> Span {
         Span {
-            start: self.op.clone(),
-            end: self.left.get_node().get_span().end
+            start: node.op.clone(),
+            end: Span::from(*node.left.get_node()).end
         }
     }
 }
@@ -92,18 +92,18 @@ pub enum PrimaryNode {
     }
 }
 
-impl Node for PrimaryNode {
-    fn get_span(&self) -> Span {
-        match &self {
-            Self::Identifier(token) => Span {
+impl From<PrimaryNode> for Span {
+    fn from(node: PrimaryNode) -> Span {
+        match node {
+            PrimaryNode::Identifier(token) => Span {
                 start: token.clone(),
                 end: token.clone()
             },
-            Self::Literal(token) => Span {
+            PrimaryNode::Literal(token) => Span {
                 start: token.clone(),
                 end: token.clone()
             },
-            Self::Paren {
+            PrimaryNode::Paren {
                 lparen,
                 rparen,
                 expr: _
@@ -121,8 +121,4 @@ impl Node for PrimaryNode {
             },
         }
     }
-}
-
-pub trait Node {
-    fn get_span(&self) -> Span;
 }
