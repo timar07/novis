@@ -1,6 +1,7 @@
 use std::process;
 use crate::{
-    parser::ast::statement::Statement
+    parser::ast::statement::Statement,
+    errors::DescribableError
 };
 use super::{
     statement::Executable,
@@ -28,7 +29,7 @@ impl Interpreter {
             if let Err(error) = stmt.run(global_env.as_mut()) {
                 match error {
                     InterpreterException::Fatal(fatal) => {
-                        eprint!("{:?}", fatal);
+                        fatal.print();
                         process::exit(1)
                     },
                     InterpreterException::Return(_) => {
