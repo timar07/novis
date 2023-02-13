@@ -57,7 +57,6 @@ impl Display for Span {
 }
 
 struct Highlighter;
-
 impl Highlighter {
     /// Highlight inline span, for example:
     ///     1 | print foo(2+2)/0;
@@ -102,11 +101,11 @@ impl Highlighter {
             }
 
             // Last line ends with highlight
-            if n == end-1 {
+            if n == end-start-1 {
                 snippet.push_str(&LineFormatter::new(
                     n,
                     line,
-                    Some(Highlighter::underline('_', 1, width+1))
+                    Some(Highlighter::underline('_', 1, width))
                 ));
             } else {
                 snippet.push_str(&LineFormatter::new(
