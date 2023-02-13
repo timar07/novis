@@ -81,12 +81,14 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                     _ => { Ok(Value::Null) }
                 }
             }
+            // Value is not a functional
             Some(_) => return Err(Fatal(
                 RuntimeError {
                     span: Span::from(name.clone()),
                     tag: ObjectIsNotCallable
                 }
             )),
+            // Nothing found
             None => return Err(Fatal(
                 RuntimeError {
                     span: Span::from(name.clone()),

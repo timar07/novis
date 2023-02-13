@@ -5,6 +5,7 @@ use crate::{
     lexer::token::Token, errors::Span
 };
 
+/// Statement representation.
 #[derive(Debug)]
 pub enum Statement {
     Group(Group),
@@ -16,13 +17,12 @@ pub enum Statement {
     Cond(Cond),
     Loop(Loop),
     Assign(Assignment),
-    Noop
 }
 
 /// Group statement representation.
 /// ```text
-/// {   <stmts>   }
-/// ^ - lcurly    ^ - rcurly
+/// {    <stmts>   }
+/// ^ - lcurly     ^ - rcurly
 /// ```
 #[derive(Debug)]
 pub struct Group {

@@ -58,6 +58,10 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         }
     };
 
+    if tokens.prev().tag != TokenTag::RightCurly {
+        tokens.require(&[TokenTag::Semicolon])?;
+    }
+
     Ok(stmt)
 }
 
@@ -130,12 +134,10 @@ fn parse_params(tokens: &mut TokenStream) -> Result<Vec<Token>, ParseError> {
 /// return = 'return' expression ';';
 /// ```
 fn r#return(tokens: &mut TokenStream) -> Result<Return, ParseError> {
-    let res = Ok(Return {
+    Ok(Return {
         keyword: tokens.prev().clone(),
         expr: expression(tokens)?,
-    });
-    tokens.require(&[TokenTag::Semicolon])?;
-    res
+    })
 }
 
 /// # Rule
@@ -202,19 +204,16 @@ fn group(tokens: &mut TokenStream) -> Result<Group, ParseError> {
 /// print = 'print' expression ';';
 /// ```
 fn print(tokens: &mut TokenStream) -> Result<Print, ParseError> {
-    let res = Ok(Print {
+    Ok(Print {
         keyword: tokens.prev().clone(),
         expr: expression(tokens)?,
-    });
-
-    tokens.require(&[TokenTag::Semicolon])?;
-    res
+    })
 }
 
 /// # Rule
 /// Variable definition matches following grammary:
 /// ```ebnf
-/// define = 'let' identifier '<-' expression ';';
+/// define = 'let' identifier '<-' expression;
 /// ```
 fn var_definition(
     tokens: &mut TokenStream
@@ -232,21 +231,18 @@ fn var_definition(
 
     let operator = tokens.require(&[TokenTag::ArrowLeft])?;
 
-    let res = Ok(Let {
+    Ok(Let {
         keyword: keyword,
         name: identifier,
         operator: operator.clone(),
         expr: expression(tokens)?,
-    });
-
-    tokens.require(&[TokenTag::Semicolon])?;
-    res
+    })
 }
 
 /// # Rule
 /// Variable assignment matches following grammary:
 /// ```ebnf
-/// assign = identifier ('<-') expression ';';
+/// assign = identifier ('<-') expression;
 /// ```
 fn assignment(
     tokens: &mut TokenStream,
@@ -257,27 +253,22 @@ fn assignment(
         TokenTag::ArrowLeft
     ])?;
 
-    let res = Ok(Assignment {
-        operator: tokens.prev().clone(),
+    Ok(Assignment {
         name: identifier,
+        operator: tokens.prev().clone(),
         expr: expression(tokens)?
-    });
-
-    tokens.require(&[TokenTag::Semicolon])?;
-    res
+    })
 }
 
 /// # Rule
 /// Expression statement matches following grammary:
 /// ```ebnf
-/// expr_stmt = expression ';';
+/// expr_stmt = expression;
 /// ```
 fn expr_stmt(
     tokens: &mut TokenStream,
 ) -> Result<ExprStatment, ParseError> {
-    let res = Ok(ExprStatment {
+    Ok(ExprStatment {
         expr: expression(tokens)?
-    });
-    tokens.require(&[TokenTag::Semicolon])?;
-    res
+    })
 }

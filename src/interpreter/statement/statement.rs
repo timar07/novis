@@ -38,7 +38,6 @@ impl Executable for Statement {
             Statement::Loop(r#loop) => r#loop.run(env),
             Statement::Assign(assign) => assign.run(env),
             Statement::Expr(expr) => expr.run(env),
-            Statement::Noop => Ok(Value::Null)
         }
     }
 }

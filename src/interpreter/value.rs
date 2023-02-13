@@ -1,7 +1,7 @@
-use std::{rc::Rc};
+use std::{rc::Rc, ops};
 use crate::{
     parser::ast::statement::Group,
-    lexer::token::Token
+    lexer::token::Token,
 };
 use super::{
     runtime_error::{
@@ -22,6 +22,84 @@ pub enum Value {
         body: Rc<Group>,
     },
     Null,
+}
+
+impl ops::Add<Value> for Value {
+    type Output = Result<Value, ()>;
+
+    fn add(self, rhs: Value) -> Self::Output {
+        match (self, rhs) {
+            (Value::Number(l), Value::Number(r)) => {
+                Ok(Value::Number(l + r))
+            },
+            (Value::String(l), Value::String(r)) => {
+                Ok(Value::String(
+                    Box::new(l.as_ref().clone() + r.as_ref())
+                ))
+            },
+            (Value::Number(l), Value::String(r)) => {
+                Ok(Value::String(
+                    Box::new(l.to_string() + r.as_ref())
+                ))
+            },
+            (Value::String(l), Value::Number(r)) => {
+                Ok(Value::String(
+                    Box::new(l.as_ref().clone() + &r.to_string())
+                ))
+            },
+            _ => Err(())
+        }
+    }
+}
+
+impl ops::Sub for Value {
+    type Output = Result<Value, ()>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Value::Number(l), Value::Number(r)) => {
+                Ok(Value::Number(l - r))
+            },
+            _ => Err(()),
+        }
+    }
+}
+
+impl ops::Neg for Value {
+    type Output = Result<Value, ()>;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Value::Number(n) => Ok(Value::Number(-n)),
+            _ => Err(())
+        }
+    }
+}
+
+impl ops::Div for Value {
+    type Output =  Result<Value, ()>;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Value::Number(l), Value::Number(r)) => {
+                Ok(Value::Number(l / r))
+            },
+            _ => Err(())
+        }
+    }
+}
+
+impl ops::Mul for Value {
+    type Output = Result<Value, ()>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Value::Number(l), Value::Number(r)) => {
+                Ok(Value::Number(l * r))
+            },
+            _ => Err(()),
+        }
+    }
 }
 
 impl PartialEq for Value {

@@ -32,7 +32,7 @@ pub enum RuntimeErrorTag {
         expr: UnaryNode,
         op: Token
     },
-    DivisionByZero(BinaryNode),
+    DivisionByZero,
     ReturnOutOfFunction,
     ObjectIsNotCallable,
     ConversionError {
@@ -53,7 +53,7 @@ pub enum RuntimeErrorTag {
 impl RuntimeErrorTag {
     pub fn to_human_readable(&self) -> String {
         match self {
-            Self::DivisionByZero(_) => {
+            Self::DivisionByZero => {
                 format!("Division by zero")
             },
             Self::ObjectIsNotCallable => {

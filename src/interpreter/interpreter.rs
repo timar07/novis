@@ -1,7 +1,6 @@
 use std::process;
 use crate::{
-    parser::ast::statement::Statement,
-    errors::DescribableError
+    parser::ast::statement::Statement
 };
 use super::{
     statement::Executable,
