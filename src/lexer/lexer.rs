@@ -1,18 +1,14 @@
 use std::rc::Rc;
 use crate::{
-    file_stream::{
-        FileStream
-    },
-    errors::{
-        DebugInfo,
-    },
+    file_stream::FileStream,
+    errors::DebugInfo,
     lexer::token::{
         Token,
         TokenTag,
         Lexeme
     }
 };
-use super::{lexical_error::{LexicalError, LexicalErrorTag::*}};
+use super::lexical_error::{LexicalError, LexicalErrorTag::*};
 
 pub struct Lexer {
     pub src: Rc<String>,

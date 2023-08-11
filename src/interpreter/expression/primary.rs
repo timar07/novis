@@ -1,7 +1,7 @@
 use crate::{
     parser::ast::expression::{PrimaryNode, Expression},
     interpreter::{
-        runtime_error::{
+        runtime_exception::{
             InterpreterException::{
                 self,
                 *
@@ -76,7 +76,7 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                     Err(InterpreterException::Return(value)) => {
                         closure.leave();
                         *env = global_env;
-                        return Ok(value);
+                        return Ok(value.val);
                     }
                     _ => { Ok(Value::Null) }
                 }

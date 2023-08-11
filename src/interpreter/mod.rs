@@ -1,4 +1,4 @@
-mod runtime_error;
+mod runtime_exception;
 mod env;
 mod expression;
 mod statement;

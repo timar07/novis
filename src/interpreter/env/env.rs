@@ -1,13 +1,9 @@
-use std::{
-    collections::HashMap
-};
-use crate::{
-    interpreter::{
-        value::Value,
-        runtime_error::{
-            RuntimeError,
-            RuntimeErrorTag::*
-        }
+use std::collections::HashMap;
+use crate::interpreter::{
+    value::Value,
+    runtime_exception::{
+        RuntimeError,
+        RuntimeErrorTag::*
     }
 };
 

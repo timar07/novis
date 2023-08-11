@@ -1,7 +1,9 @@
-use crate::{lexer::token::{
-    Token
-}, errors::{DescribableError, Span}};
+use crate::{
+    lexer::token::Token,
+    errors::{DescribableError, Span}
+};
 
+#[derive(Debug)]
 pub struct LexicalError {
     pub token: Token,
     pub tag: LexicalErrorTag

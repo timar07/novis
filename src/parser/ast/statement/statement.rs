@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    parser::ast::expression::{Expression},
+    parser::ast::expression::Expression,
     lexer::token::Token, errors::Span
 };
 

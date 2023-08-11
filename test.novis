@@ -1,4 +1,4 @@
-
+return "hello";
 func zero(a) -> {
     return 0;
 }

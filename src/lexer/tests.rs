@@ -17,6 +17,7 @@ mod tests {
 
         let tokens: Vec<TokenTag> = lexer
             .lex()
+            .unwrap()
             .iter()
             .map(|token| token.tag.clone())
             .collect();
@@ -43,6 +44,7 @@ mod tests {
 
         let tokens: Vec<TokenTag> = lexer
             .lex()
+            .unwrap()
             .iter()
             .map(|token| token.tag.clone())
             .collect();
@@ -66,6 +68,7 @@ mod tests {
 
         let tokens: Vec<TokenTag> = lexer
             .lex()
+            .unwrap()
             .iter()
             .map(|token| token.tag.clone())
             .collect();
@@ -86,6 +89,7 @@ mod tests {
 
         let tokens: Vec<TokenTag> = lexer
             .lex()
+            .unwrap()
             .iter()
             .map(|token| token.tag.clone())
             .collect();
@@ -108,6 +112,7 @@ mod tests {
 
         let tokens: Vec<TokenTag> = lexer
             .lex()
+            .unwrap()
             .iter()
             .map(|token| token.tag.clone())
             .collect();

@@ -1,7 +1,7 @@
 use crate::{
     parser::ast::expression::{UnaryNode},
     interpreter::{
-        runtime_error::{
+        runtime_exception::{
             InterpreterException::{
                 self,
                 *

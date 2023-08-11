@@ -13,7 +13,13 @@ use super::value::Value;
 #[derive(Debug)]
 pub enum InterpreterException {
     Fatal(RuntimeError),
-    Return(Value)
+    Return(ReturnValue)
+}
+
+#[derive(Debug)]
+pub struct ReturnValue {
+    pub val: Value,
+    pub span: Span
 }
 
 #[derive(Debug)]

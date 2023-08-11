@@ -1,4 +1,4 @@
-use crate::errors::{DebugInfo};
+use crate::errors::DebugInfo;
 
 #[derive(Debug, Clone)]
 pub struct Token {

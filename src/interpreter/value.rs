@@ -3,12 +3,10 @@ use crate::{
     parser::ast::statement::Group,
     lexer::token::Token,
 };
-use super::{
-    runtime_error::{
-        InterpreterException,
-        RuntimeError,
-        RuntimeErrorTag::*
-    }
+use super::runtime_exception::{
+    InterpreterException,
+    RuntimeError,
+    RuntimeErrorTag::*
 };
 
 #[derive(Clone, Debug)]

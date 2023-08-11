@@ -6,7 +6,7 @@ use crate::{
 use super::{
     statement::Executable,
     env::Env,
-    runtime_error::{
+    runtime_exception::{
         InterpreterException,
         RuntimeError,
         RuntimeErrorTag::*
@@ -32,11 +32,12 @@ impl Interpreter {
                         fatal.print();
                         process::exit(1)
                     },
-                    InterpreterException::Return(_) => {
+                    InterpreterException::Return(value) => {
                         RuntimeError {
-                            span: todo!(),
+                            span: value.span,
                             tag: ReturnOutOfFunction
-                        }
+                        }.print();
+                        process::exit(1)
                     }
                 };
             };

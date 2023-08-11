@@ -1,11 +1,12 @@
 use crate::{
     interpreter::{
-        runtime_error::{InterpreterException},
+        runtime_exception::{
+            InterpreterException,
+            ReturnValue
+        },
         value::Value,
         env::Env,
-        expression::{
-            Evaluatable
-        },
+        expression::Evaluatable,
         utils::check_condition
     },
     parser::ast::statement::{
@@ -138,7 +139,10 @@ impl Executable for Print {
 
 impl Executable for Return {
     fn run(&self, env: &mut Env) -> Result<Value, InterpreterException> {
-        Err(InterpreterException::Return(self.expr.eval(env)?))
+        Err(InterpreterException::Return(ReturnValue{
+            val: self.expr.eval(env)?,
+            span: self.keyword.clone().into()
+        }))
     }
 }
 

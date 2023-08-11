@@ -1,5 +1,5 @@
 use crate::interpreter::{
-    runtime_error::InterpreterException,
+    runtime_exception::InterpreterException,
     value::Value, env::Env
 };
 

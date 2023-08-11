@@ -3,7 +3,7 @@ use super::{
     env::Env,
     value::Value,
     expression::Evaluatable,
-    runtime_error::{
+    runtime_exception::{
         InterpreterException
     }
 };
