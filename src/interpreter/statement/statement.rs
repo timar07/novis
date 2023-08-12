@@ -2,7 +2,9 @@ use crate::{
     interpreter::{
         runtime_exception::{
             InterpreterException,
-            ReturnValue
+            ReturnValue,
+            RuntimeError,
+            RuntimeErrorTag::*
         },
         value::Value,
         env::Env,
@@ -81,7 +83,12 @@ impl Executable for Assignment {
                         _ => unreachable!()
                     }
                 } else {
-                    todo!()
+                    return Err(InterpreterException::Fatal(RuntimeError {
+                        span: self.name.clone().into(),
+                        tag: NameNotDefined {
+                            name: id.clone()
+                        }
+                    }));
                 }
             }
             _ => unreachable!()
