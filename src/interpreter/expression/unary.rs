@@ -1,5 +1,5 @@
 use crate::{
-    parser::ast::expression::{UnaryNode},
+    parser::ast::expression::UnaryNode,
     interpreter::{
         runtime_exception::{
             InterpreterException::{

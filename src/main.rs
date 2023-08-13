@@ -4,7 +4,7 @@ mod parser;
 mod interpreter;
 mod file_stream;
 
-use std::time::{Instant};
+use std::time::Instant;
 use colored::Colorize;
 use errors::DescribableError;
 use std::{env, process::exit};

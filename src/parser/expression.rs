@@ -1,6 +1,4 @@
-use crate::{
-    lexer::token::TokenTag::{*, self},
-};
+use crate::lexer::token::TokenTag::{*, self};
 use super::{
     ast::expression::{
         Expression,

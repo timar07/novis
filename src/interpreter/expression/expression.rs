@@ -1,9 +1,7 @@
 use crate::{
     parser::ast::expression::{ExpressionNode, Expression},
     interpreter::{
-        runtime_exception::{
-            InterpreterException,
-        },
+        runtime_exception::InterpreterException,
         value::Value,
         env::Env,
     }
