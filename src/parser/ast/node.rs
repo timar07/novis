@@ -1,12 +1,8 @@
 use std::fmt::Debug;
 
 use crate::{
-    lexer::token::{
-        Token
-    },
-    errors::{
-        Span
-    }
+    lexer::token::Token,
+    errors::Span
 };
 
 #[derive(Debug, Clone)]
