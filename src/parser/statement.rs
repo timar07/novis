@@ -46,6 +46,7 @@ pub fn statement(tokens: &mut TokenStream) -> Result<Statement, ParseError> {
         TokenTag::Func      => Statement::Func(func_definition(tokens)?),
         TokenTag::Return    => Statement::Retrun(r#return(tokens)?),
         TokenTag::Identifier(_) => {
+            dbg!(tokens.lookahead(1));
             if tokens.match_next(&[TokenTag::ArrowLeft]) {
                 Statement::Assign(assignment(tokens)?)
             } else {

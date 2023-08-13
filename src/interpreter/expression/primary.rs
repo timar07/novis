@@ -62,8 +62,13 @@ fn call(name: &Token, env: &mut Env, args: &Vec<Box<Expression>>) -> Result<Valu
                             );
 
                             match definition_result {
-                                Err(err) => {
-                                    return Err(InterpreterException::Fatal(err))
+                                Err(err_tag) => {
+                                    return Err(InterpreterException::Fatal(
+                                        RuntimeError {
+                                            span: params[i].clone().into(),
+                                            tag: err_tag
+                                        }
+                                    ))
                                 },
                                 _ => ()
                             }

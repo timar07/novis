@@ -1,6 +1,2 @@
-return "hello";
-func zero(a) -> {
-    return 0;
-}
-
-print 120/zero("helloworld");
+let a <- 5;
+let a <- 6;

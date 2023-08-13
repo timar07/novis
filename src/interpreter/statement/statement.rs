@@ -102,7 +102,15 @@ impl Executable for Let {
         match self.name.tag.clone() {
             TokenTag::Identifier(id) => {
                 let val = self.expr.eval(env)?;
-                env.define(&id, val).unwrap();
+
+                if let Err(err_tag) = env.define(&id, val) {
+                    return Err(InterpreterException::Fatal(
+                        RuntimeError {
+                            span: self.name.clone().into(),
+                            tag: err_tag
+                        }
+                    ))
+                }
             }
             _ => unreachable!()
         };

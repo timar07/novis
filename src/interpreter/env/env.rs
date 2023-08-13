@@ -3,7 +3,7 @@ use crate::interpreter::{
     value::Value,
     runtime_exception::{
         RuntimeError,
-        RuntimeErrorTag::*
+        RuntimeErrorTag::{*, self}
     }
 };
 
@@ -89,7 +89,7 @@ impl Env {
     }
 
     /// Define value in current level of environment.
-    pub fn define(&mut self, name: &String, value: Value) -> Result<(), RuntimeError> {
+    pub fn define(&mut self, name: &String, value: Value) -> Result<(), RuntimeErrorTag> {
         self.get_current_mut().define(name, value)?;
         Ok(())
     }
@@ -111,16 +111,13 @@ impl EnvInner {
     }
 
     /// Define value in this environment level
-    pub fn define(&mut self, name: &String, value: Value) -> Result<(), RuntimeError> {
+    pub fn define(&mut self, name: &String, value: Value) -> Result<(), RuntimeErrorTag> {
         if self.get(name).is_none() {
             self.hashmap.insert(name.into(), value);
             Ok(())
         } else {
-            Err(RuntimeError {
-                span: todo!(),
-                tag: NameRedefinition {
-                    name: name.into()
-                }
+            Err(NameRedefinition {
+                name: name.into()
             })
         }
     }
