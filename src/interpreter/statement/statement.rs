@@ -79,7 +79,7 @@ impl Executable for Assignment {
                     let rval = self.expr.eval(env)?;
 
                     match self.operator.tag {
-                        TokenTag::Equal => env.set(&id, rval).unwrap(),
+                        TokenTag::ArrowLeft => env.set(&id, rval).unwrap(),
                         _ => unreachable!()
                     }
                 } else {

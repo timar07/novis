@@ -44,9 +44,12 @@ impl TokenStream {
     }
 
     /// Check if the current token matches 'token'
-    #[allow(dead_code)]
-    fn check(&mut self, token: TokenTag) -> bool {
-        self.current().tag == token
+    pub fn check_next(&mut self, tokens: &'static [TokenTag]) -> bool {
+        if tokens.contains(&self.current().tag) {
+            return true
+        }
+
+        false
     }
 
     /// Consume token
