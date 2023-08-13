@@ -49,11 +49,23 @@ impl Executable for Func {
     fn run(&self, env: &mut Env) -> Result<Value, InterpreterException> {
         match self.name.tag.clone() {
             TokenTag::Identifier(id) => {
-                env.define(&id, Value::Function {
-                    params: self.params.clone(),
-                    name: self.name.clone(),
-                    body: self.body.clone()
-                }).unwrap();
+                let result = env.define(
+                    &id,
+                    Value::Function {
+                        params: self.params.clone(),
+                        name: self.name.clone(),
+                        body: self.body.clone()
+                    }
+                );
+
+                if let Err(err_tag) = result {
+                    return Err(InterpreterException::Fatal(
+                        RuntimeError {
+                            span: self.name.clone().into(),
+                            tag: err_tag
+                        }
+                    ));
+                }
             }
             _ => unreachable!()
         };
