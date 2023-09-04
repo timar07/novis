@@ -1,4 +1,3 @@
-mod tests;
 mod parse_error;
 mod expression;
 mod statement;
